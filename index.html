@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Şampiyonlar Ligi - Puan Durumu ve Ayarlar</title>
+    <title>Şampiyonlar Ligi - Şifreli Giriş</title>
     <!-- Tailwind CSS (Tasarım için) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome (İkonlar için) -->
@@ -47,8 +47,8 @@
             <div class="relative z-10">
                 <i class="fas fa-trophy text-4xl text-yellow-400 mb-2 drop-shadow-lg"></i>
                 <h1 class="text-3xl md:text-4xl font-extrabold tracking-wider text-white drop-shadow-md uppercase">Şampiyonlar Ligi</h1>
-                <p class="text-blue-200 text-sm mt-2 font-medium bg-black/20 inline-block px-4 py-1 rounded-full">
-                    ÖZEL KURAL: Atılan Her Gol 1 Puan Sayılır!
+                <p id="auth-status" class="text-sm mt-2 font-medium bg-black/20 inline-block px-4 py-1 rounded-full text-blue-200">
+                    <i class="fas fa-eye"></i> İzleyici Modu
                 </p>
             </div>
         </div>
@@ -58,10 +58,10 @@
             <button onclick="showTab('standings')" id="btn-standings" class="flex-1 py-3 rounded-md transition-all font-bold text-white bg-blue-600 shadow-md">
                 <i class="fas fa-list-ol mr-2"></i> Puan Durumu
             </button>
-            <button onclick="showTab('fixtures')" id="btn-fixtures" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700">
-                <i class="fas fa-calendar-alt mr-2"></i> Fikstür & Sonuçlar
+            <button onclick="checkAccessAndShowTab('fixtures')" id="btn-fixtures" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700">
+                <i class="fas fa-calendar-alt mr-2"></i> Fikstür & Skor Girişi
             </button>
-            <button onclick="showTab('settings')" id="btn-settings" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700">
+            <button onclick="checkAccessAndShowTab('settings')" id="btn-settings" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700">
                 <i class="fas fa-cog mr-2"></i> Ayarlar
             </button>
         </div>
@@ -105,6 +105,18 @@
             <div id="tab-settings" class="hidden space-y-8">
                 <h2 class="text-2xl font-bold text-blue-400 border-b border-slate-700 pb-2">Lig Ayarları</h2>
                 
+                <!-- Şifre Değiştirme -->
+                <div class="bg-slate-800/50 p-4 rounded-lg shadow-inner space-y-4">
+                    <h3 class="text-xl font-semibold text-white">Yönetici Şifresini Değiştir</h3>
+                    <input type="password" id="old-password" placeholder="Eski Şifre" 
+                        class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:border-blue-500 outline-none">
+                    <input type="password" id="new-password" placeholder="Yeni Şifre" 
+                        class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:border-blue-500 outline-none">
+                    <button onclick="changePassword()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                        <i class="fas fa-lock mr-2"></i> Şifreyi Değiştir
+                    </button>
+                </div>
+
                 <!-- Oyuncu Ekleme -->
                 <div class="bg-slate-800/50 p-4 rounded-lg shadow-inner space-y-4">
                     <h3 class="text-xl font-semibold text-white">Oyuncu Ekle</h3>
@@ -119,7 +131,7 @@
 
                 <!-- Oyuncu Yönetimi -->
                 <div class="bg-slate-800/50 p-4 rounded-lg shadow-inner space-y-4">
-                    <h3 class="text-xl font-semibold text-white">Mevcut Oyuncular (${playersList.length})</h3>
+                    <h3 class="text-xl font-semibold text-white" id="player-count-display">Mevcut Oyuncular</h3>
                     <p id="player-warning" class="text-yellow-400 text-sm hidden">Uyarı: Ligin düzgün çalışması için çift sayıda (min 4) oyuncu önerilir. Tek sayıda oyuncu varsa oynamayan haftalar (BYE) olacaktır.</p>
                     <ul id="player-list-container" class="space-y-2 max-h-64 overflow-y-auto pr-2">
                         <!-- JS ile doldurulacak -->
@@ -140,43 +152,80 @@
 
         <!-- Alt Bilgi ve Sıfırlama -->
         <div class="flex justify-between items-center text-xs text-slate-500 mt-4 px-2">
-            <span>Veriler tarayıcınızda saklanır.</span>
+            <span>Veriler tarayıcınızda (LocalStorage) saklanır.</span>
             <button onclick="resetLeague()" class="flex items-center gap-2 hover:text-red-400 transition-colors cursor-pointer">
                 <i class="fas fa-trash-alt"></i> Tüm Ligi Sıfırla (Oyuncular Dahil)
             </button>
         </div>
 
     </div>
+    
+    <!-- MODAL: ŞİFRE GİRİŞİ -->
+    <div id="password-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-800 glass-panel p-6 rounded-xl shadow-2xl w-full max-w-sm space-y-4">
+            <h3 class="text-xl font-bold text-white"><i class="fas fa-user-lock mr-2 text-red-400"></i> Yönetici Girişi</h3>
+            <p class="text-slate-400 text-sm">Bu bölüme erişmek ve veri girmek için yönetici şifresini girin.</p>
+            <input type="password" id="modal-password-input" placeholder="Şifre" 
+                   class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:border-blue-500 outline-none"
+                   onkeydown="if(event.key === 'Enter') validatePassword()">
+            <div class="flex justify-between gap-3">
+                <button onclick="closeModal()" class="flex-1 py-3 px-4 rounded-lg bg-slate-600 hover:bg-slate-700 text-white font-bold transition-colors">
+                    İptal
+                </button>
+                <button onclick="validatePassword()" class="flex-1 py-3 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold transition-colors">
+                    Giriş Yap
+                </button>
+            </div>
+            <p id="modal-error-message" class="text-red-400 text-sm text-center hidden">Hatalı şifre.</p>
+        </div>
+    </div>
+
 
     <!-- JAVASCRIPT KODLARI -->
     <script>
         // Global değişkenler
         let playersList = [];
         let matches = [];
-        const localStorageKey = 'sampiyonlarLigiData_v6'; // Yeni versiyon anahtarı
+        let isAuthenticated = false; // Şifre girişi yapıldı mı?
+        let currentTabToOpen = 'standings'; // Şifre başarılı olursa açılacak sekme
+        const localStorageKey = 'sampiyonlarLigiData_v7'; 
+        const passwordKey = 'sampiyonlarLigiPassword_v7';
+        const defaultPassword = '12345'; // İlk çalıştırmada kullanılacak varsayılan şifre
 
-        // Varsayılan oyuncu listesi (Eğer LocalStorage boşsa kullanılacak)
+        // Varsayılan oyuncu listesi 
         const defaultPlayers = [
             "Ahmet Kunbetli", "Ahmet Çetin", "Yasin Argana", "Serkan Gözde", 
             "Ömer Aksoy", "Ersen Dağdeviren", "Osman Kaplan", "Orhan Akmaz", 
             "Hakan Kaya", "Alper Gündüz"
         ];
 
+        // Şifreyi LocalStorage'dan Çek
+        function getPassword() {
+            let password = localStorage.getItem(passwordKey);
+            if (!password) {
+                // Şifre yoksa varsayılanı kaydet ve döndür
+                localStorage.setItem(passwordKey, defaultPassword);
+                password = defaultPassword;
+            }
+            return password;
+        }
+
         // Sayfa Yüklendiğinde
         window.onload = function() {
             loadData();
             renderStandings();
             renderFixtures();
-            renderPlayerSettings(); // Ayarlar menüsünü yükle
+            renderPlayerSettings(); 
             showTab('standings'); // Başlangıçta Puan Durumu sekmesini göster
         };
 
         // Verileri LocalStorage'dan Çek
         function loadData() {
             const savedData = localStorage.getItem(localStorageKey);
+            getPassword(); // Şifreyi kontrol et/oluştur
+            
             if (savedData) {
                 const data = JSON.parse(savedData);
-                // Oyuncu listesini yükle, yoksa varsayılanı kullan
                 playersList = data.players || defaultPlayers;
                 matches = data.matches || [];
             } else {
@@ -193,41 +242,130 @@
             };
             localStorage.setItem(localStorageKey, JSON.stringify(dataToSave));
             renderStandings(); 
-            renderPlayerSettings(); // Ayarlar listesini güncelle
+            renderPlayerSettings(); 
+            renderFixtures(); // Skor girişleri değişebileceği için fikstürü de yenile
         }
+
+        // ---------------------------------------------------------------------
+        // GÜVENLİK VE GİRİŞ FONKSİYONLARI
+        // ---------------------------------------------------------------------
+
+        // Şifre Girişi Modalını Aç
+        function openModal(tabName) {
+            currentTabToOpen = tabName;
+            const modal = document.getElementById('password-modal');
+            const input = document.getElementById('modal-password-input');
+            const error = document.getElementById('modal-error-message');
+            
+            error.classList.add('hidden');
+            input.value = '';
+            modal.classList.remove('hidden');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        // Şifre Giriş Modalını Kapat
+        function closeModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+            document.getElementById('modal-password-input').value = '';
+            showTab('standings'); // İptal edilirse puan durumuna dön
+        }
+
+        // Şifreyi Doğrula
+        function validatePassword() {
+            const enteredPassword = document.getElementById('modal-password-input').value;
+            const storedPassword = getPassword();
+            const error = document.getElementById('modal-error-message');
+            const status = document.getElementById('auth-status');
+
+            if (enteredPassword === storedPassword) {
+                isAuthenticated = true;
+                closeModal();
+                showTab(currentTabToOpen); // İstenen sekmeyi aç
+                
+                status.innerHTML = `<i class="fas fa-shield-alt text-yellow-400"></i> Yönetici (Admin)`;
+            } else {
+                error.classList.remove('hidden');
+                document.getElementById('modal-password-input').value = '';
+                document.getElementById('modal-password-input').focus();
+                isAuthenticated = false;
+            }
+        }
+        
+        // Tab değiştirmeden önce erişim kontrolü
+        function checkAccessAndShowTab(tabName) {
+            if (tabName === 'standings') {
+                showTab('standings');
+                return;
+            }
+            
+            if (isAuthenticated) {
+                showTab(tabName);
+            } else {
+                openModal(tabName);
+            }
+        }
+
+        // Şifreyi Değiştirme
+        function changePassword() {
+            if (!isAuthenticated) {
+                console.error("Şifre değiştirmek için yönetici olarak giriş yapmalısınız.");
+                return;
+            }
+
+            const oldPassInput = document.getElementById('old-password').value;
+            const newPassInput = document.getElementById('new-password').value;
+            const storedPassword = getPassword();
+
+            if (oldPassInput !== storedPassword) {
+                alert("Hata: Eski şifreniz yanlış."); // Bu kullanımda confirm/alert'e izin veriliyor
+                return;
+            }
+
+            if (newPassInput.length < 5) {
+                alert("Hata: Yeni şifre en az 5 karakter olmalıdır.");
+                return;
+            }
+
+            localStorage.setItem(passwordKey, newPassInput);
+            document.getElementById('old-password').value = '';
+            document.getElementById('new-password').value = '';
+            alert("Şifre başarıyla değiştirildi!");
+        }
+
+        // ---------------------------------------------------------------------
+        // LİG MANTIK FONKSİYONLARI
+        // ---------------------------------------------------------------------
 
         // Fikstür Oluştur (Berger Sistemi / Round Robin)
         function generateFixtures(initial = false) {
             matches = [];
             
             if (playersList.length < 2) {
-                 window.alert("Lig başlatılamıyor. En az 2 oyuncu olmalıdır.");
+                 console.warn("Lig başlatılamıyor. En az 2 oyuncu olmalıdır.");
                  return;
             }
 
             let tempPlayers = [...playersList];
             
-            // Tek sayıda oyuncu varsa, BYE (bay) ekle
             const isOdd = tempPlayers.length % 2 !== 0;
             if (isOdd) {
                 tempPlayers.push(null); 
             }
-            const n = tempPlayers.length; // Şimdi n çift (>= 2)
+            const n = tempPlayers.length; 
             
             const totalRounds = n - 1;
             const matchesPerRound = n / 2;
 
-            // Berger Rotation Logic
             for (let round = 0; round < totalRounds; round++) {
+                
                 for (let match = 0; match < matchesPerRound; match++) {
                     const p1 = tempPlayers[match];
                     const p2 = tempPlayers[n - 1 - match];
 
                     if (p1 === null || p2 === null) continue; // BYE maçını atla
 
-                    // Ev sahibi/Deplasman dengesi için rotasyon
-                    const home = (round % 2 === 0) ? p1 : p2;
-                    const away = (round % 2 === 0) ? p2 : p1;
+                    const home = (match % 2 === 0) ? p1 : p2;
+                    const away = (match % 2 === 0) ? p2 : p1;
 
                     matches.push({
                         id: `R${round + 1}-M${match + 1}`,
@@ -239,18 +377,25 @@
                     });
                 }
                 
-                // Oyuncuları döndür: İlk oyuncuyu sabitle, geriye kalanları döndür
-                const fixedPlayer = tempPlayers[0];
+                const firstPlayer = tempPlayers[0];
                 const lastPlayer = tempPlayers.pop();
                 tempPlayers.splice(1, 0, lastPlayer);
+                tempPlayers[0] = firstPlayer;
             }
             
             saveData();
-            renderFixtures();
         }
 
         // Skor Güncelleme
         function updateScore(id, type, value) {
+            if (!isAuthenticated) {
+                console.error("Skor girişi yapmak için Yönetici olarak giriş yapmalısınız.");
+                // Eğer şifre girilmemişse, inputu hemen eski değerine döndür.
+                renderFixtures(); 
+                checkAccessAndShowTab('fixtures'); // Giriş modalını tekrar aç
+                return;
+            }
+
             const matchIndex = matches.findIndex(m => m.id === id);
             if (matchIndex > -1) {
                 // Değer boşsa null yap, değilse sayıya çevir
@@ -263,12 +408,10 @@
         function renderStandings() {
             const stats = {};
             
-            // İstatistikleri sıfırla
             playersList.forEach(p => {
                 stats[p] = { name: p, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
             });
 
-            // Maçları tara
             matches.forEach(m => {
                 if (m.homeScore !== null && m.awayScore !== null) {
                     const h = m.home;
@@ -276,7 +419,6 @@
                     const hs = m.homeScore;
                     const as = m.awayScore;
 
-                    // Oyuncuların hala listede olup olmadığını kontrol et (oyuncu silindiyse)
                     if (!stats[h] || !stats[a]) return;
 
                     stats[h].played++;
@@ -287,25 +429,16 @@
                     stats[h].ga += as;
                     stats[a].ga += hs;
 
-                    // *** PUANLAMA LOGİĞİ: Puan = Atılan Gol Sayısı (GF) ***
-                    stats[h].points += hs; // Ev sahibinin puanı = Attığı gol sayısı
-                    stats[a].points += as; // Deplasman puanı = Attığı gol sayısı
+                    // PUANLAMA LOGİĞİ: Puan = Atılan Gol Sayısı (GF)
+                    stats[h].points += hs; 
+                    stats[a].points += as;
 
-                    // Kazanma/Kaybetme istatistikleri (G, B, M)
-                    if (hs > as) {
-                        stats[h].won++;
-                        stats[a].lost++;
-                    } else if (as > hs) {
-                        stats[a].won++;
-                        stats[h].lost++;
-                    } else {
-                        stats[h].drawn++;
-                        stats[a].drawn++;
-                    }
+                    if (hs > as) { stats[h].won++; stats[a].lost++; } 
+                    else if (as > hs) { stats[a].won++; stats[h].lost++; } 
+                    else { stats[h].drawn++; stats[a].drawn++; }
                 }
             });
 
-            // Sıralama (Puan > Averaj > Atılan Gol)
             const sorted = Object.values(stats).sort((a, b) => {
                 const gdA = a.gf - a.ga;
                 const gdB = b.gf - b.ga;
@@ -315,7 +448,6 @@
                 return b.gf - a.gf;
             });
 
-            // HTML Bas
             const tbody = document.getElementById('standings-body');
             tbody.innerHTML = '';
             
@@ -323,7 +455,6 @@
                 const gd = team.gf - team.ga;
                 const gdStr = gd > 0 ? `+${gd}` : gd;
                 
-                // İlk 3 renkleri
                 let rankClass = "text-slate-500";
                 let rankIcon = index + 1;
                 if (index === 0) { rankClass = "text-yellow-400 font-bold"; rankIcon = '<i class="fas fa-crown"></i>'; }
@@ -356,7 +487,6 @@
             const container = document.getElementById('fixtures-container');
             container.innerHTML = '';
 
-            // Haftalara göre grupla
             const rounds = {};
             matches.forEach(m => {
                 if (!rounds[m.round]) rounds[m.round] = [];
@@ -379,6 +509,24 @@
                     const isPlayed = m.homeScore !== null && m.awayScore !== null;
                     const borderClass = isPlayed ? 'border-green-500/30 bg-green-900/10' : 'border-slate-700 bg-slate-800/40';
 
+                    const scoreInputs = isAuthenticated ? 
+                        // Admin modu: Inputlar aktif
+                        `<input type="number" min="0" placeholder="-" 
+                            class="w-10 h-10 bg-slate-900 text-center rounded border border-slate-600 focus:border-blue-500 outline-none text-white font-mono text-lg"
+                            value="${m.homeScore !== null ? m.homeScore : ''}"
+                            onchange="updateScore('${m.id}', 'homeScore', this.value)"
+                        >
+                        <span class="text-slate-500 font-bold">:</span>
+                        <input type="number" min="0" placeholder="-" 
+                            class="w-10 h-10 bg-slate-900 text-center rounded border border-slate-600 focus:border-blue-500 outline-none text-white font-mono text-lg"
+                            value="${m.awayScore !== null ? m.awayScore : ''}"
+                            onchange="updateScore('${m.id}', 'awayScore', this.value)"
+                        >` :
+                        // İzleyici modu: Sadece skor gösterilir
+                        `<span class="text-white font-mono text-xl">${m.homeScore !== null ? m.homeScore : '-'}</span>
+                         <span class="text-slate-500 font-bold">:</span>
+                         <span class="text-white font-mono text-xl">${m.awayScore !== null ? m.awayScore : '-'}</span>`;
+
                     matchesHtml += `
                         <div class="flex items-center justify-between p-3 rounded-lg border ${borderClass} transition-all hover:bg-slate-700">
                             <div class="flex-1 text-right pr-3 text-xs md:text-sm font-semibold truncate text-slate-300">
@@ -386,17 +534,7 @@
                             </div>
                             
                             <div class="flex items-center gap-2">
-                                <input type="number" min="0" placeholder="-" 
-                                    class="w-10 h-10 bg-slate-900 text-center rounded border border-slate-600 focus:border-blue-500 outline-none text-white font-mono text-lg"
-                                    value="${m.homeScore !== null ? m.homeScore : ''}"
-                                    onchange="updateScore('${m.id}', 'homeScore', this.value)"
-                                >
-                                <span class="text-slate-500 font-bold">:</span>
-                                <input type="number" min="0" placeholder="-" 
-                                    class="w-10 h-10 bg-slate-900 text-center rounded border border-slate-600 focus:border-blue-500 outline-none text-white font-mono text-lg"
-                                    value="${m.awayScore !== null ? m.awayScore : ''}"
-                                    onchange="updateScore('${m.id}', 'awayScore', this.value)"
-                                >
+                                ${scoreInputs}
                             </div>
 
                             <div class="flex-1 text-left pl-3 text-xs md:text-sm font-semibold truncate text-slate-300">
@@ -414,7 +552,7 @@
         // Ayarlar sekmesindeki oyuncu listesini günceller
         function renderPlayerSettings() {
             const container = document.getElementById('player-list-container');
-            const playerCountElement = document.querySelector('#tab-settings h3');
+            const playerCountElement = document.getElementById('player-count-display');
             const warningElement = document.getElementById('player-warning');
             
             container.innerHTML = '';
@@ -430,59 +568,83 @@
                 const li = `
                     <li class="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700">
                         <span class="font-medium text-white">${player}</span>
-                        <button onclick="removePlayer('${player.replace(/'/g, "\\'")}')" class="text-red-400 hover:text-red-500 transition-colors ml-4">
+                        <button onclick="removePlayer('${player.replace(/'/g, "\\'")}')" class="text-red-400 hover:text-red-500 transition-colors ml-4 ${!isAuthenticated ? 'opacity-50 cursor-not-allowed' : ''}" ${!isAuthenticated ? 'disabled' : ''}>
                             <i class="fas fa-minus-circle"></i> Çıkar
                         </button>
                     </li>
                 `;
                 container.innerHTML += li;
             });
+            
+            // Eğer admin yetkisi yoksa, ayarlar bölümündeki tüm input ve butonları pasif yap
+            const settingsInputs = document.querySelectorAll('#tab-settings input, #tab-settings button');
+            settingsInputs.forEach(el => {
+                if (el.id !== 'old-password' && el.id !== 'new-password' && el.id !== 'modal-password-input') {
+                    if (!isAuthenticated) {
+                        el.classList.add('opacity-50', 'cursor-not-allowed');
+                        el.setAttribute('disabled', 'true');
+                    } else {
+                        el.classList.remove('opacity-50', 'cursor-not-allowed');
+                        el.removeAttribute('disabled');
+                    }
+                }
+            });
         }
 
         // Yeni Oyuncu Ekleme İşlemi
         function handleAddPlayer() {
+            if (!isAuthenticated) {
+                checkAccessAndShowTab('settings');
+                return;
+            }
             const input = document.getElementById('new-player-name');
             let name = input.value.trim();
             
             if (!name) {
-                window.alert("Lütfen bir oyuncu adı girin.");
+                console.warn("Lütfen bir oyuncu adı girin."); 
                 return;
             }
 
-            // İlk harfleri büyük yap
             name = name.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
             if (playersList.includes(name)) {
-                window.alert(`${name} zaten listede var.`);
+                console.warn(`${name} zaten listede var.`);
                 return;
             }
 
             playersList.push(name);
-            input.value = ''; // Inputu temizle
+            input.value = ''; 
             
-            // Oyuncu eklendiği için fikstürün yeniden çekilmesi istenir
-            if (window.confirm("Oyuncu listesi değişti. Yeni fikstür oluşturulsun mu? (Mevcut skorlar silinecektir)")) {
+            if (confirm("Oyuncu listesi değişti. Yeni fikstür oluşturulsun mu? (Mevcut skorlar silinecektir)")) {
                 generateFixtures();
             } else {
-                saveData(); // Sadece oyuncu listesini kaydet ve re-render et
+                saveData(); 
             }
         }
 
         // Oyuncu Çıkarma İşlemi
         function removePlayer(name) {
+            if (!isAuthenticated) {
+                 checkAccessAndShowTab('settings');
+                 return;
+            }
             if (playersList.length <= 2) {
-                window.alert("Ligde en az 2 oyuncu kalmalıdır.");
+                console.warn("Ligde en az 2 oyuncu kalmalıdır.");
                 return;
             }
-            if (window.confirm(`${name} adlı oyuncuyu ligden çıkarmak istediğinizden emin misiniz? Fikstür yenilenecek ve tüm skorlar silinecektir.`)) {
+            if (confirm(`${name} adlı oyuncuyu ligden çıkarmak istediğinizden emin misiniz? Fikstür yenilenecek ve tüm skorlar silinecektir.`)) {
                 playersList = playersList.filter(p => p !== name);
-                generateFixtures(); // Fikstür ve skorları sıfırla
+                generateFixtures(); 
             }
         }
 
         // Yeni Fikstür Çekme Butonu İşlemi
         function resetFixturesConfirmation() {
-            if (window.confirm("Tüm maç skorları silinecek ve mevcut oyuncu listesine göre yepyeni bir fikstür çekilecektir. Emin misiniz?")) {
+            if (!isAuthenticated) {
+                 checkAccessAndShowTab('settings');
+                 return;
+            }
+            if (confirm("Tüm maç skorları silinecek ve mevcut oyuncu listesine göre yepyeni bir fikstür çekilecektir. Emin misiniz?")) {
                 generateFixtures();
                 showTab('fixtures');
             }
@@ -490,27 +652,50 @@
 
         // Sekme Değiştirme
         function showTab(tabName) {
-            document.getElementById('tab-standings').classList.add('hidden');
-            document.getElementById('tab-fixtures').classList.add('hidden');
-            document.getElementById('tab-settings').classList.add('hidden');
+            // Statü güncellemesi
+            const status = document.getElementById('auth-status');
+            if (isAuthenticated) {
+                 status.innerHTML = `<i class="fas fa-shield-alt text-yellow-400"></i> Yönetici (Admin)`;
+            } else {
+                 status.innerHTML = `<i class="fas fa-eye"></i> İzleyici Modu`;
+            }
 
-            document.getElementById('btn-standings').classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-            document.getElementById('btn-fixtures').classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-            document.getElementById('btn-settings').classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-            
-            document.getElementById('btn-standings').classList.add('text-slate-400', 'hover:bg-slate-700');
-            document.getElementById('btn-fixtures').classList.add('text-slate-400', 'hover:bg-slate-700');
-            document.getElementById('btn-settings').classList.add('text-slate-400', 'hover:bg-slate-700');
+            // Tüm sekmeleri gizle
+            ['standings', 'fixtures', 'settings'].forEach(tab => {
+                document.getElementById('tab-' + tab).classList.add('hidden');
+                const btn = document.getElementById('btn-' + tab);
+                if (btn) {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                    btn.classList.add('text-slate-400', 'hover:bg-slate-700');
+                }
+            });
 
+            // İstenen sekmeyi göster ve butonu aktif yap
             document.getElementById('tab-' + tabName).classList.remove('hidden');
-            document.getElementById('btn-' + tabName).classList.add('bg-blue-600', 'text-white', 'shadow-md');
-            document.getElementById('btn-' + tabName).classList.remove('text-slate-400', 'hover:bg-slate-700');
+            const activeBtn = document.getElementById('btn-' + tabName);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-700');
+            }
+            
+            // Eğer fixtures veya settings açıldıysa ve admin değilse, inputları izleyici moduna al
+            if (tabName === 'fixtures') {
+                renderFixtures();
+            }
+            if (tabName === 'settings') {
+                renderPlayerSettings();
+            }
         }
 
         // Tüm Ligi Sıfırla (Oyuncular dahil)
         function resetLeague() {
-            if (window.confirm("DİKKAT! Tüm oyuncular, skorlar ve fikstür silinecek. Uygulama fabrika ayarlarına dönecek. Emin misin?")) {
+             if (!isAuthenticated) {
+                 checkAccessAndShowTab('settings'); // Giriş yapılmadan sıfırlama yapamaz
+                 return;
+            }
+            if (confirm("DİKKAT! Tüm oyuncular, skorlar, fikstür VE Yönetici Şifresi tarayıcınızdan (LocalStorage) silinecek. Uygulama fabrika ayarlarına dönecek. Emin misin?")) {
                 localStorage.removeItem(localStorageKey);
+                localStorage.removeItem(passwordKey);
                 location.reload();
             }
         }
