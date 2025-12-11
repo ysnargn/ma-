@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Şampiyonlar Ligi - Puan Durumu</title>
+    <!-- Tailwind CSS (Tasarım için) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome (İkonlar için) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0f172a; /* Koyu Lacivert */
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .cl-gradient {
+            background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 50%, #1e3a8a 100%);
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Tablo satır hover efekti */
+        tr:hover td {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        /* Skor inputları */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-2 md:p-6">
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <!-- Başlık Alanı -->
+        <div class="text-center py-6 relative overflow-hidden rounded-2xl shadow-2xl cl-gradient border border-blue-400/30">
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
+            <div class="relative z-10">
+                <i class="fas fa-trophy text-4xl text-yellow-400 mb-2 drop-shadow-lg"></i>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-wider text-white drop-shadow-md uppercase">Şampiyonlar Ligi</h1>
+                <p class="text-blue-200 text-sm mt-2 font-medium bg-black/20 inline-block px-4 py-1 rounded-full">
+                    Galibiyet: 2 Puan | Beraberlik/Mağlubiyet: 1 Puan
+                </p>
+            </div>
+        </div>
+
+        <!-- Menü Butonları -->
+        <div class="flex rounded-lg bg-slate-800 p-1 shadow-lg">
+            <button onclick="showTab('standings')" id="btn-standings" class="flex-1 py-3 rounded-md transition-all font-bold text-white bg-blue-600 shadow-md">
+                <i class="fas fa-list-ol mr-2"></i> Puan Durumu
+            </button>
+            <button onclick="showTab('fixtures')" id="btn-fixtures" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700">
+                <i class="fas fa-calendar-alt mr-2"></i> Fikstür & Sonuçlar
+            </button>
+        </div>
+
+        <!-- İÇERİK ALANI -->
+        <div class="glass-panel rounded-xl shadow-2xl overflow-hidden min-h-[500px]">
+            
+            <!-- SEKMESİ: PUAN DURUMU -->
+            <div id="tab-standings" class="p-0">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/80 text-blue-300 text-xs uppercase tracking-wider border-b border-slate-700">
+                                <th class="p-4 text-center w-12">#</th>
+                                <th class="p-4">Oyuncu</th>
+                                <th class="p-4 text-center" title="Oynanan">O</th>
+                                <th class="p-4 text-center hidden sm:table-cell" title="Galibiyet">G</th>
+                                <th class="p-4 text-center hidden sm:table-cell" title="Beraberlik">B</th>
+                                <th class="p-4 text-center hidden sm:table-cell" title="Mağlubiyet">M</th>
+                                <th class="p-4 text-center hidden md:table-cell" title="Attığı">A</th>
+                                <th class="p-4 text-center hidden md:table-cell" title="Yediği">Y</th>
+                                <th class="p-4 text-center" title="Averaj">AV</th>
+                                <th class="p-4 text-center font-bold text-white bg-blue-900/30 text-lg">P</th>
+                            </tr>
+                        </thead>
+                        <tbody id="standings-body" class="divide-y divide-slate-700 text-sm md:text-base">
+                            <!-- JS ile doldurulacak -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SEKMESİ: FİKSTÜR -->
+            <div id="tab-fixtures" class="hidden p-4 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div id="fixtures-container">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Alt Bilgi ve Sıfırlama -->
+        <div class="flex justify-between items-center text-xs text-slate-500 mt-4 px-2">
+            <span>Veriler tarayıcınızda saklanır.</span>
+            <button onclick="resetLeague()" class="flex items-center gap-2 hover:text-red-400 transition-colors cursor-pointer">
+                <i class="fas fa-trash-alt"></i> Ligi Sıfırla
+            </button>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT KODLARI -->
+    <script>
+        // Oyuncu Listesi
+        const playersList = [
+            "Ahmet Kunbetli", "Ahmet Çetin", "Yasin Argana", "Serkan Gözde", 
+            "Ömer Aksoy", "Ersen Dağdeviren", "Osman Kaplan", "Orhan Akmaz", 
+            "Hakan Kaya", "Alper Gündüz"
+        ];
+
+        // Veri Yapısı
+        let matches = [];
+
+        // Sayfa Yüklendiğinde
+        window.onload = function() {
+            loadData();
+            renderStandings();
+            renderFixtures();
+        };
+
+        // Verileri LocalStorage'dan Çek
+        function loadData() {
+            const savedMatches = localStorage.getItem('sampiyonlarLigiData_v2');
+            if (savedMatches) {
+                matches = JSON.parse(savedMatches);
+            } else {
+                generateFixtures();
+            }
+        }
+
+        // Verileri Kaydet
+        function saveData() {
+            localStorage.setItem('sampiyonlarLigiData_v2', JSON.stringify(matches));
+            renderStandings(); // Puan durumunu güncelle
+        }
+
+        // Fikstür Oluştur (Berger Sistemi / Round Robin)
+        function generateFixtures() {
+            matches = [];
+            let tempPlayers = [...playersList];
+            const n = tempPlayers.length;
+            const totalRounds = n - 1;
+            const matchesPerRound = n / 2;
+
+            for (let round = 0; round < totalRounds; round++) {
+                for (let match = 0; match < matchesPerRound; match++) {
+                    const homeIdx = (round + match) % (n - 1);
+                    const awayIdx = (n - 1 - match + round) % (n - 1);
+
+                    let p1 = tempPlayers[homeIdx];
+                    let p2 = tempPlayers[awayIdx];
+
+                    // Son eleman sabittir
+                    if (match === 0) {
+                        p2 = tempPlayers[n - 1];
+                    }
+
+                    // Ev sahibi/Deplasman dengesi
+                    const home = (match === 0 && round % 2 === 1) ? p2 : p1;
+                    const away = (match === 0 && round % 2 === 1) ? p1 : p2;
+
+                    matches.push({
+                        id: `R${round + 1}-M${match + 1}`,
+                        round: round + 1,
+                        home: home,
+                        away: away,
+                        homeScore: null,
+                        awayScore: null
+                    });
+                }
+            }
+            saveData();
+        }
+
+        // Skor Güncelleme
+        function updateScore(id, type, value) {
+            const matchIndex = matches.findIndex(m => m.id === id);
+            if (matchIndex > -1) {
+                // Değer boşsa null yap, değilse sayıya çevir
+                matches[matchIndex][type] = value === '' ? null : parseInt(value);
+                saveData();
+            }
+        }
+
+        // Puan Durumunu Hesapla ve Göster
+        function renderStandings() {
+            const stats = {};
+            
+            // İstatistikleri sıfırla
+            playersList.forEach(p => {
+                stats[p] = { name: p, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+            });
+
+            // Maçları tara
+            matches.forEach(m => {
+                if (m.homeScore !== null && m.awayScore !== null) {
+                    const h = m.home;
+                    const a = m.away;
+                    const hs = m.homeScore;
+                    const as = m.awayScore;
+
+                    stats[h].played++;
+                    stats[a].played++;
+                    stats[h].gf += hs;
+                    stats[a].gf += as;
+                    stats[h].ga += as;
+                    stats[a].ga += hs;
+
+                    if (hs > as) {
+                        stats[h].won++;
+                        stats[a].lost++;
+                        stats[h].points += 2; // Galibiyet 2
+                        stats[a].points += 1; // Mağlubiyet 1
+                    } else if (as > hs) {
+                        stats[a].won++;
+                        stats[h].lost++;
+                        stats[a].points += 2; // Galibiyet 2
+                        stats[h].points += 1; // Mağlubiyet 1
+                    } else {
+                        stats[h].drawn++;
+                        stats[a].drawn++;
+                        stats[h].points += 1; // Beraberlik 1
+                        stats[a].points += 1; // Beraberlik 1
+                    }
+                }
+            });
+
+            // Sıralama (Puan > Averaj > Atılan Gol)
+            const sorted = Object.values(stats).sort((a, b) => {
+                const gdA = a.gf - a.ga;
+                const gdB = b.gf - b.ga;
+                if (b.points !== a.points) return b.points - a.points;
+                if (gdB !== gdA) return gdB - gdA;
+                return b.gf - a.gf;
+            });
+
+            // HTML Bas
+            const tbody = document.getElementById('standings-body');
+            tbody.innerHTML = '';
+            
+            sorted.forEach((team, index) => {
+                const gd = team.gf - team.ga;
+                const gdStr = gd > 0 ? `+${gd}` : gd;
+                
+                // İlk 3 renkleri
+                let rankClass = "text-slate-500";
+                let rankIcon = index + 1;
+                if (index === 0) { rankClass = "text-yellow-400 font-bold"; rankIcon = '<i class="fas fa-crown"></i>'; }
+                else if (index === 1) { rankClass = "text-gray-300 font-bold"; }
+                else if (index === 2) { rankClass = "text-amber-700 font-bold"; }
+
+                const row = `
+                    <tr class="transition-colors ${index % 2 === 0 ? 'bg-slate-800/30' : ''}">
+                        <td class="p-4 text-center font-mono ${rankClass}">${rankIcon}</td>
+                        <td class="p-4 font-medium text-white flex items-center gap-3">
+                            <div class="w-1 h-6 rounded-r ${index === 0 ? 'bg-yellow-400' : 'bg-blue-600'}"></div>
+                            ${team.name}
+                        </td>
+                        <td class="p-4 text-center font-mono text-slate-300">${team.played}</td>
+                        <td class="p-4 text-center font-mono text-green-400 hidden sm:table-cell">${team.won}</td>
+                        <td class="p-4 text-center font-mono text-slate-400 hidden sm:table-cell">${team.drawn}</td>
+                        <td class="p-4 text-center font-mono text-red-400 hidden sm:table-cell">${team.lost}</td>
+                        <td class="p-4 text-center font-mono hidden md:table-cell text-slate-400">${team.gf}</td>
+                        <td class="p-4 text-center font-mono hidden md:table-cell text-slate-400">${team.ga}</td>
+                        <td class="p-4 text-center font-mono font-bold text-slate-200">${gdStr}</td>
+                        <td class="p-4 text-center font-bold text-xl text-white bg-blue-600/20 shadow-inner">${team.points}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Fikstürü Göster
+        function renderFixtures() {
+            const container = document.getElementById('fixtures-container');
+            container.innerHTML = '';
+
+            // Haftalara göre grupla
+            const rounds = {};
+            matches.forEach(m => {
+                if (!rounds[m.round]) rounds[m.round] = [];
+                rounds[m.round].push(m);
+            });
+
+            Object.keys(rounds).forEach(roundNum => {
+                const roundDiv = document.createElement('div');
+                roundDiv.className = "space-y-3";
+                
+                const title = `
+                    <h3 class="text-center text-blue-400 font-bold uppercase tracking-widest text-xs bg-slate-900/50 py-2 rounded border border-blue-900/50">
+                        ${roundNum}. Hafta
+                    </h3>
+                    <div class="grid gap-3 md:grid-cols-2">
+                `;
+                
+                let matchesHtml = '';
+                rounds[roundNum].forEach(m => {
+                    const isPlayed = m.homeScore !== null && m.awayScore !== null;
+                    const borderClass = isPlayed ? 'border-green-500/30 bg-green-900/10' : 'border-slate-700 bg-slate-800/40';
+
+                    matchesHtml += `
+                        <div class="flex items-center justify-between p-3 rounded-lg border ${borderClass} transition-all hover:bg-slate-700">
+                            <div class="flex-1 text-right pr-3 text-xs md:text-sm font-semibold truncate text-slate-300">
+                                ${m.home}
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <input type="number" min="0" placeholder="-" 
+                                    class="w-10 h-10 bg-slate-900 text-center rounded border border-slate-600 focus:border-blue-500 outline-none text-white font-mono text-lg"
+                                    value="${m.homeScore !== null ? m.homeScore : ''}"
+                                    onchange="updateScore('${m.id}', 'homeScore', this.value)"
+                                >
+                                <span class="text-slate-500 font-bold">:</span>
+                                <input type="number" min="0" placeholder="-" 
+                                    class="w-10 h-10 bg-slate-900 text-center rounded border border-slate-600 focus:border-blue-500 outline-none text-white font-mono text-lg"
+                                    value="${m.awayScore !== null ? m.awayScore : ''}"
+                                    onchange="updateScore('${m.id}', 'awayScore', this.value)"
+                                >
+                            </div>
+
+                            <div class="flex-1 text-left pl-3 text-xs md:text-sm font-semibold truncate text-slate-300">
+                                ${m.away}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                roundDiv.innerHTML = title + matchesHtml + '</div>';
+                container.appendChild(roundDiv);
+            });
+        }
+
+        // Sekme Değiştirme
+        function showTab(tabName) {
+            document.getElementById('tab-standings').classList.add('hidden');
+            document.getElementById('tab-fixtures').classList.add('hidden');
+            document.getElementById('btn-standings').classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+            document.getElementById('btn-fixtures').classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+            document.getElementById('btn-standings').classList.add('text-slate-400');
+            document.getElementById('btn-fixtures').classList.add('text-slate-400');
+
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            document.getElementById('btn-' + tabName).classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            document.getElementById('btn-' + tabName).classList.remove('text-slate-400');
+        }
+
+        // Ligi Sıfırla
+        function resetLeague() {
+            if (confirm("Tüm skorlar silinecek ve lig yeniden başlayacak. Emin misin?")) {
+                localStorage.removeItem('sampiyonlarLigiData_v2');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
+
