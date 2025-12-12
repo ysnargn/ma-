@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masa Tenisi Turnuvası (Haftalık Fikstür)</title>
+    <title>Depoda Saklanan Masa Canavarları (Özelleştirilebilir Başlık)</title>
     <!-- Tailwind CSS (Tasarım için) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome (İkonlar için) -->
@@ -15,10 +15,9 @@
             color: #e2e8f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        /* CL GRADIENT yerine SARI TEMA */
+        /* SARI TEMA - Canavar temasına hafif bir uyum */
         .tt-gradient {
-            /* Sarıdan biraz daha koyu bir tona geçiş */
-            background: linear-gradient(90deg, #f59e0b 0%, #facc15 50%, #f59e0b 100%);
+            background: linear-gradient(90deg, #ca8a04 0%, #facc15 50%, #ca8a04 100%);
         }
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
@@ -62,24 +61,27 @@
 
     <div class="max-w-4xl mx-auto space-y-6">
         
-        <!-- Başlık Alanı (SARI TEMA UYGULANDI) -->
+        <!-- Başlık Alanı (SARI TEMA) -->
         <div class="text-center py-8 relative overflow-hidden rounded-2xl shadow-2xl tt-gradient border border-yellow-700/50">
             <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
             <div class="relative z-10">
                 <!-- MASA TENİSİ İKONU -->
-                <i class="fas fa-table-tennis-paddle-ball text-5xl text-gray-800 mb-2 drop-shadow-lg"></i>
-                <!-- BAŞLIK METNİ DEĞİŞTİ -->
-                <h1 class="text-3xl md:text-4xl font-extrabold tracking-wider text-gray-900 drop-shadow-md uppercase">MASA TENİSİ TURNUVASI</h1>
+                <i class="fas fa-table-tennis text-5xl text-gray-800 mb-2 drop-shadow-lg animate-pulse"></i>
+                <!-- BAŞLIK METNİ -->
+                <h1 id="app-title" class="text-2xl md:text-3xl font-extrabold tracking-wider text-gray-900 drop-shadow-md uppercase">
+                    DEPODA SAKLANAN MASA CANAVARLARI (TEKLER LİGİ)
+                </h1>
+                <span id="mode-display" class="text-xs text-gray-700 font-bold mt-1 block">TEKLER LİGİ</span>
             </div>
         </div>
 
         <!-- Menü Butonları -->
         <div class="flex rounded-lg bg-slate-800 p-1 shadow-lg" id="menu-buttons">
             <button onclick="showTab('standings')" id="btn-standings" class="flex-1 py-3 rounded-md transition-all font-bold bg-blue-600 text-white shadow-md">
-                <i class="fas fa-list-ol mr-2"></i> Puan Durumu
+                <i class="fas fa-list-ol mr-2"></i> Canavar Sıralaması
             </button>
             <button onclick="showTab('fixtures')" id="btn-fixtures" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700">
-                <i class="fas fa-calendar-alt mr-2"></i> Fikstür
+                <i class="fas fa-calendar-alt mr-2"></i> Maç Fikstürü
             </button>
         </div>
 
@@ -92,25 +94,15 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-900/80 text-blue-300 text-xs uppercase tracking-wider border-b border-slate-700">
-                                <!-- 1. # -->
                                 <th class="p-4 text-center w-12">#</th>
-                                <!-- 2. Oyuncu -->
-                                <th class="p-4">Oyuncu</th>
-                                <!-- 3. Oynanan (O) -->
-                                <th class="p-4 text-center" title="Oynanan">O</th>
-                                <!-- 4. Galibiyet (G) - Mobile gizli -->
+                                <th class="p-4" id="standings-entity-title">Canavar</th>
+                                <th class="p-4 text-center" title="Oynanan Maç">O</th>
                                 <th class="p-4 text-center hidden sm:table-cell" title="Galibiyet">G</th>
-                                <!-- 5. Beraberlik (B) - Mobile gizli -->
                                 <th class="p-4 text-center hidden sm:table-cell" title="Beraberlik">B</th>
-                                <!-- 6. Mağlubiyet (M) - Mobile gizli -->
                                 <th class="p-4 text-center hidden sm:table-cell" title="Mağlubiyet">M</th>
-                                <!-- 7. Attığı Gol (A) - Mobile gizli -->
                                 <th class="p-4 text-center hidden sm:table-cell" title="Attığı Gol">A</th>
-                                <!-- 8. Yediği Gol (Y) - MD ekranda göster -->
                                 <th class="p-4 text-center hidden md:table-cell" title="Yediği Gol">Y</th>
-                                <!-- 9. Averaj (AV) -->
                                 <th class="p-4 text-center" title="Averaj">AV</th>
-                                <!-- 10. Puan (P) -->
                                 <th class="p-4 text-center font-bold text-white bg-blue-900/30 text-lg">P</th>
                             </tr>
                         </thead>
@@ -128,7 +120,6 @@
                     <button id="prev-round-btn" onclick="changeRound(-1)" class="p-2 text-blue-400 hover:text-blue-200 disabled:text-slate-600 disabled:cursor-not-allowed transition-colors rounded-full hover:bg-slate-700/50">
                         <i class="fas fa-chevron-left text-xl"></i>
                     </button>
-                    <!-- YAZI BASİTLEŞTİRİLDİ: Sadece hafta numarası ve "Hafta" yazısı kaldı -->
                     <h3 id="round-title" class="text-center text-blue-400 font-bold uppercase tracking-widest text-lg md:text-xl">
                         1. Hafta
                     </h3>
@@ -142,12 +133,6 @@
                 </div>
             </div>
             
-        </div>
-
-        <!-- Alt Bilgi (Taşındı - sadece sıfırlama kısmı kaldırıldı) -->
-        <!-- Alt Bilgi ve Sıfırlama -->
-        <div class="flex justify-end items-center text-xs text-slate-500 mt-4 px-2">
-            <!-- Bu kısım Ayarlar Modal'ına taşındı -->
         </div>
 
     </div>
@@ -168,37 +153,13 @@
         </div>
     </div>
     
-    <!-- OYUNCU FİKSTÜR MODALI -->
-    <div id="player-fixtures-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity" onclick="closePlayerFixturesModal()">
-        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl max-w-lg w-full h-[80vh] flex flex-col border border-blue-400/30" onclick="event.stopPropagation()">
-            <!-- Modal Başlık ve Kapatma Butonu -->
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700">
-                <h3 id="player-fixtures-title" class="text-2xl font-bold text-blue-400">Oyuncu Maçları</h3>
-                <button onclick="closePlayerFixturesModal()" class="text-slate-400 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <!-- Modal İçerik Alanı -->
-            <div id="player-fixtures-content" class="overflow-y-auto custom-scrollbar flex-grow p-1">
-                <!-- İçerik JS ile doldurulacak -->
-            </div>
-            
-            <div class="mt-4 pt-2 border-t border-slate-700 text-center">
-                 <button onclick="closePlayerFixturesModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors w-full">
-                    Kapat
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- AYARLAR MODALI (YENİ) -->
+    <!-- AYARLAR MODALI -->
     <div id="settings-modal" class="hidden fixed inset-0 z-[55] flex items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity" onclick="closeSettingsModal()">
         <div class="bg-slate-800 p-6 rounded-xl shadow-2xl max-w-xl w-full h-[90vh] md:h-auto md:max-h-[90vh] flex flex-col border border-blue-400/30" onclick="event.stopPropagation()">
             
             <!-- Başlık ve Kapatma -->
             <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
-                <h2 class="text-2xl font-bold text-blue-400">Lig Ayarları ve Yönetimi</h2>
+                <h2 class="text-2xl font-bold text-blue-400">Canavar Yönetimi ve Fikstür Ayarları</h2>
                 <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white transition-colors">
                     <i class="fas fa-times text-xl"></i>
                 </button>
@@ -212,45 +173,73 @@
                     <p id="settings-message" class="text-sm text-center font-medium"></p>
                 </div>
 
+                <!-- UYGULAMA BAŞLIĞI AYARI -->
+                <div class="bg-slate-900/50 p-4 rounded-lg shadow-inner space-y-3 border border-yellow-700/50">
+                    <h3 class="text-xl font-semibold text-yellow-400">Uygulama Başlığını Düzenle</h3>
+                    <input type="text" id="app-custom-title" placeholder="Yeni lig başlığı" 
+                           class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:border-yellow-500 outline-none"
+                           onchange="saveCustomTitle(this.value)">
+                    <p class="text-xs text-slate-400">Başlık, tüm uygulamanın üst kısmında görünür.</p>
+                </div>
+                
                 <!-- Oyuncu Ekleme -->
                 <div class="bg-slate-900/50 p-4 rounded-lg shadow-inner space-y-4 border border-slate-700">
-                    <h3 class="text-xl font-semibold text-white">Oyuncu Ekle</h3>
+                    <h3 class="text-xl font-semibold text-white">Canavar Ekle (Tekler İçin)</h3>
                     <div class="flex flex-col gap-3">
-                        <input type="text" id="new-player-name" placeholder="Yeni oyuncu adı" 
+                        <input type="text" id="new-player-name" placeholder="Yeni canavar adı" 
                                class="flex-grow p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:border-blue-500 outline-none">
                     </div>
                     <button onclick="handleAddPlayer()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
-                        <i class="fas fa-plus mr-2"></i> Oyuncu Ekle
+                        <i class="fas fa-plus mr-2"></i> Canavar Ekle
                     </button>
-                    <p class="text-xs text-slate-400 text-center">Oyuncu listesi sadece isimlerden oluşacaktır.</p>
                 </div>
 
                 <!-- Oyuncu Yönetimi -->
                 <div class="bg-slate-900/50 p-4 rounded-lg shadow-inner space-y-4 border border-slate-700">
-                    <h3 class="text-xl font-semibold text-white" id="player-count-display">Mevcut Oyuncular (0)</h3>
-                    <p id="player-warning" class="text-yellow-400 text-sm hidden">Uyarı: Ligin düzgün çalışması için çift sayıda (min 4) oyuncu önerilir. Tek sayıda oyuncu varsa oynamayan haftalar (BYE) olacaktır.</p>
-                    <ul id="player-list-container" class="space-y-3 max-h-64 overflow-y-auto pr-2">
+                    <h3 class="text-xl font-semibold text-white" id="player-count-display">Mevcut Canavarlar (0)</h3>
+                    <p id="player-warning" class="text-yellow-400 text-sm hidden">Uyarı: Çiftli turnuva için çift sayıda (min 4) canavar gerekir.</p>
+                    <ul id="player-list-container" class="space-y-3 max-h-48 overflow-y-auto pr-2">
                         <!-- JS ile doldurulacak -->
                     </ul>
                 </div>
 
-                <!-- Kura Çekimi ve Sıfırlama -->
-                <div class="bg-slate-900/50 p-4 rounded-lg shadow-inner space-y-4 border border-slate-700">
-                    <h3 class="text-xl font-semibold text-white">Fikstür ve Skor Yönetimi</h3>
+                <!-- MOD DEĞİŞTİRME BUTONLARI -->
+                <div id="mode-switch-section">
+                    <!-- TEKLER LİGİNDEYKEN GÖRÜNÜR -->
+                    <div id="doubles-start-section" class="bg-purple-900/30 p-4 rounded-lg shadow-inner space-y-4 border border-purple-700">
+                        <h3 class="text-xl font-semibold text-purple-400">Çiftli Turnuva Başlat</h3>
+                        <button onclick="startDoublesTournamentConfirmation()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-users mr-2"></i> Çiftli Turnuvaya Dön
+                        </button>
+                        <p class="text-sm text-purple-300 pt-2">Mevcut skorlara göre canavarları (1. vs son, 2. vs sondan bir önceki) eşleştirir, takımları kurar ve yeni bir **takım lig fikstürü** oluşturur. Mevcut skorlar silinir.</p>
+                    </div>
 
-                    <button onclick="resetFixturesConfirmation()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
-                        <i class="fas fa-redo-alt mr-2"></i> Yeni Fikstür Çek ve Skorları Sıfırla
-                    </button>
-                    <p class="text-sm text-slate-400 pt-2">Bu işlem, mevcut skorları tamamen siler ve yeni oyuncu listesine göre yepyeni, rastgele bir fikstür oluşturur.</p>
+                    <!-- ÇİFTLER LİGİNDEYKEN GÖRÜNÜR -->
+                    <div id="singles-start-section" class="bg-blue-900/30 p-4 rounded-lg shadow-inner space-y-4 border border-blue-700 hidden">
+                        <h3 class="text-xl font-semibold text-blue-400">Tekler Ligi'ne Geri Dön</h3>
+                        <button onclick="startSinglesTournamentConfirmation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-user mr-2"></i> Tekler Ligi'ne Geç
+                        </button>
+                        <p class="text-sm text-blue-300 pt-2">Bu işlem, mevcut takımları ve Çiftler Ligi skorlarını silerek, canavarları tekrar bireysel oyuncu haline getirir ve yeni bir **Tekler Ligi fikstürü** oluşturur.</p>
+                    </div>
                 </div>
 
-                <!-- Tüm Ligi Sıfırla -->
-                <div class="bg-red-900/20 p-4 rounded-lg shadow-inner space-y-4 border border-red-700">
-                    <h3 class="text-xl font-semibold text-red-400">Tüm Ligi Sıfırla</h3>
-                    <button onclick="resetLeagueConfirmation()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
-                        <i class="fas fa-trash-alt mr-2"></i> Tüm Verileri Sil (Oyuncular Dahil)
+                <!-- FİKSTÜR YENİLEME BUTONU -->
+                <div class="bg-slate-900/50 p-4 rounded-lg shadow-inner space-y-4 border border-slate-700" id="reset-fixtures-section">
+                    <h3 class="text-xl font-semibold text-white" id="singles-reset-title">Tekler Ligi Fikstürünü Yenile</h3>
+                    <button onclick="resetFixturesConfirmation()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                        <i class="fas fa-redo-alt mr-2"></i> Yeni Fikstür Çek
                     </button>
-                    <p class="text-sm text-red-300 text-center">Bu işlem, yerel depolamadan *tüm* oyuncuları ve maç kayıtlarını kalıcı olarak silecektir.</p>
+                    <p class="text-sm text-slate-400 pt-2">Bu işlem, mevcut skorları tamamen siler ve rastgele bir fikstür oluşturur.</p>
+                </div>
+
+                <!-- TÜMÜNÜ SIFIRLA -->
+                <div class="bg-red-900/20 p-4 rounded-lg shadow-inner space-y-4 border border-red-700">
+                    <h3 class="text-xl font-semibold text-red-400">Tüm Depoyu Sıfırla</h3>
+                    <button onclick="resetLeagueConfirmation()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                        <i class="fas fa-trash-alt mr-2"></i> Tüm Verileri Sil (Canavarlar Dahil)
+                    </button>
+                    <p class="text-sm text-red-300 text-center">Bu işlem, yerel depolamadan *tüm* verileri kalıcı olarak silecektir.</p>
                 </div>
             </div>
         </div>
@@ -260,20 +249,27 @@
     <!-- JAVASCRIPT KODLARI -->
     <script>
         // Global Veri Yapıları (LocalStorage'dan yüklenir/kaydedilir)
-        let players = []; // {id, name}
-        let matches = []; // {id, round, home, away, homeScore, awayScore}
-        let currentRound = 1; // Fikstürdeki geçerli hafta
-        let totalRounds = 0; // Toplam hafta sayısı
+        let players = []; // {id, name} - Bireysel oyuncular
+        let teams = []; // {id, name, player1Name, player2Name} - Çiftler takımları
+        let isDoublesMode = false; // Uygulamanın Tekler (false) mı Çiftler (true) modunda olduğunu tutar
+        let matches = []; // {id, round, home: Team/Player Name, away: Team/Player Name, homeScore, awayScore}
+        let currentRound = 1; 
+        let totalRounds = 0; 
+        let customTitle = "DEPODA SAKLANAN MASA CANAVARLARI"; // Varsayılan Başlık
         let currentCallback = null;
+        let sortedPlayers = []; // Puan durumuna göre sıralanmış liste (Tekler veya Çiftler)
         
         // ---------- LOCALSTORAGE İŞLEMLERİ ----------
 
-        function savePlayers() {
+        function saveState() {
             localStorage.setItem('players', JSON.stringify(players));
-        }
-
-        function saveMatches() {
+            localStorage.setItem('teams', JSON.stringify(teams));
+            localStorage.setItem('isDoublesMode', JSON.stringify(isDoublesMode));
             localStorage.setItem('matches', JSON.stringify(matches));
+            localStorage.setItem('currentRound', currentRound);
+            localStorage.setItem('totalRounds', totalRounds);
+            localStorage.setItem('customTitle', customTitle); // Başlığı kaydet
+            console.log("State Kaydedildi. Çiftler Modu:", isDoublesMode);
         }
 
         function loadData() {
@@ -285,33 +281,95 @@
                 console.error("Oyuncu verisi yüklenirken hata:", e);
                 players = [];
             }
-
+            
+            try {
+                const loadedTeams = localStorage.getItem('teams');
+                teams = loadedTeams ? JSON.parse(loadedTeams) : [];
+            } catch (e) { teams = []; }
+            
+            try {
+                const loadedMode = localStorage.getItem('isDoublesMode');
+                isDoublesMode = loadedMode ? JSON.parse(loadedMode) : false;
+            } catch (e) { isDoublesMode = false; }
+            
             try {
                 const loadedMatches = localStorage.getItem('matches');
                 matches = loadedMatches ? JSON.parse(loadedMatches) : [];
-                // Maçları hafta ve sonra home/away sırasına göre sırala
+                
                 matches.sort((a, b) => {
                     if (a.round !== b.round) return a.round - b.round;
                     return a.home.localeCompare(b.home, 'tr');
                 });
                 
-                // Toplam hafta sayısını bul
-                if (matches.length > 0) {
-                    totalRounds = matches[matches.length - 1].round;
-                } else {
-                    totalRounds = 0;
-                }
-
+                totalRounds = matches.length > 0 ? matches[matches.length - 1].round : 0;
             } catch (e) {
                 console.error("Maç verisi yüklenirken hata:", e);
                 matches = [];
                 totalRounds = 0;
             }
+
+            customTitle = localStorage.getItem('customTitle') || "DEPODA SAKLANAN MASA CANAVARLARI"; // Başlığı yükle
+            currentRound = parseInt(localStorage.getItem('currentRound')) || 1;
+            totalRounds = parseInt(localStorage.getItem('totalRounds')) || totalRounds;
+
+            // Mode'a göre başlık güncelleme
+            updateAppTitle();
         }
         
+        function updateAppTitle() {
+            const titleEl = document.getElementById('app-title');
+            const modeDisplayEl = document.getElementById('mode-display');
+            const entityTitleEl = document.getElementById('standings-entity-title');
+            
+            // Ayarlar Modal'ındaki mod değiştirme butonlarının görünürlüğünü ayarla
+            const doublesStart = document.getElementById('doubles-start-section');
+            const singlesStart = document.getElementById('singles-start-section');
+            
+            // Ana Başlık (Özelleştirilmiş + Mod)
+            titleEl.textContent = customTitle.toUpperCase();
+
+            if (isDoublesMode) {
+                modeDisplayEl.textContent = "ÇİFTLER LİGİ";
+                entityTitleEl.textContent = "Takım";
+                
+                if (doublesStart) doublesStart.classList.add('hidden');
+                if (singlesStart) singlesStart.classList.remove('hidden');
+
+            } else {
+                modeDisplayEl.textContent = "TEKLER LİGİ";
+                entityTitleEl.textContent = "Canavar";
+
+                if (doublesStart) doublesStart.classList.remove('hidden');
+                if (singlesStart) singlesStart.classList.add('hidden');
+            }
+            
+            // Fikstür yenileme başlığını güncelle
+            const singlesResetTitle = document.getElementById('singles-reset-title');
+            if (singlesResetTitle) {
+                singlesResetTitle.textContent = isDoublesMode ? "Çiftler Fikstürünü Yenile" : "Tekler Ligi Fikstürünü Yenile";
+            }
+            
+            // Ayarlar modalındaki input'u güncelle (Açılışta doğru değeri göstermek için)
+            const customTitleInput = document.getElementById('app-custom-title');
+            if (customTitleInput) {
+                customTitleInput.value = customTitle;
+            }
+        }
+        
+        // YENİ FONKSİYON: Kullanıcının girdiği başlığı kaydeder
+        window.saveCustomTitle = function(newTitle) {
+            let trimmedTitle = newTitle.trim();
+            if (trimmedTitle === "") {
+                trimmedTitle = "MASA TENİSİ LİGİ"; // Boş bırakılırsa varsayılanı kullan
+            }
+            customTitle = trimmedTitle;
+            saveState();
+            updateAppTitle();
+            showMessage("Uygulama başlığı başarıyla güncellendi.", 'success', 2000);
+        }
+
         // ---------- YARDIMCI VE UTILITY FONKSİYONLAR ----------
 
-        // Yardımcı mesaj gösterme fonksiyonu (Ayarlar sekmesi içinde)
         function showMessage(message, type = 'success', duration = 3000) {
             const el = document.getElementById('settings-message'); 
             if (!el) return; 
@@ -329,7 +387,7 @@
             return '_' + Math.random().toString(36).substr(2, 9);
         }
         
-        // ---------- MODAL FONKSİYONLARI (Onay ve Oyuncu Fikstür) ----------
+        // ---------- MODAL FONKSİYONLARI ----------
         
         window.showConfirmationModal = function(title, message, callback, confirmText = "Onayla") {
             const modal = document.getElementById('confirmation-modal');
@@ -349,90 +407,14 @@
             }
         }
         
-        window.closePlayerFixturesModal = function() {
-            document.getElementById('player-fixtures-modal').classList.add('hidden');
-        }
-        
-        // ---------- AYARLAR MODALI FONKSİYONLARI ----------
-        
         window.showSettingsModal = function() {
-            renderPlayerSettings(); // Modal açılmadan önce oyuncu listesini güncelle
+            renderPlayerSettings(); 
+            updateAppTitle(); // Mod değiştirme butonlarının görünürlüğünü ayarlamak ve başlık inputunu doldurmak için
             document.getElementById('settings-modal').classList.remove('hidden');
         }
 
         window.closeSettingsModal = function() {
             document.getElementById('settings-modal').classList.add('hidden');
-        }
-
-        
-        // ---------- OYUNCU MAÇ DETAYLARI ----------
-
-        function generateMatchSection(matchList, title, bgColorClass, focusPlayerName) {
-            if (matchList.length === 0) {
-                return `<div class="p-3 mb-4 rounded-lg bg-slate-900/50"><p class="text-sm text-center text-slate-400">${title} bulunmamaktadır.</p></div>`;
-            }
-
-            let sectionHtml = `<h4 class="text-lg font-semibold text-blue-300 mb-2 mt-4">${title} (${matchList.length})</h4>`;
-            sectionHtml += `<div class="space-y-2 p-3 rounded-lg border border-slate-700 bg-slate-800/50 mb-4">`;
-
-            matchList.forEach(m => {
-                const isHome = m.home === focusPlayerName;
-                const opponent = isHome ? m.away : m.home;
-                const score = m.homeScore !== null ? `${m.homeScore} - ${m.awayScore}` : '— vs —';
-                
-                let resultClass = 'text-slate-300';
-                if (m.homeScore !== null) {
-                    // Maç oynanmışsa sonucu belirle
-                    const playerPoint = isHome ? m.homeScore : m.awayScore;
-                    const opponentPoint = isHome ? m.awayScore : m.homeScore;
-
-                    if (playerPoint > opponentPoint) resultClass = 'text-green-400 font-bold'; // Galibiyet
-                    else if (playerPoint < opponentPoint) resultClass = 'text-red-400 font-bold'; // Mağlubiyet
-                    else resultClass = 'text-yellow-400 font-bold'; // Beraberlik
-                }
-                
-                // Oyuncu adı ve skorun kalınlığı/rengi sonuca göre ayarlanır
-                const homeClass = isHome ? resultClass : 'text-slate-300';
-                const awayClass = !isHome ? resultClass : 'text-slate-300';
-                
-                sectionHtml += `
-                    <div class="flex items-center justify-between p-2 rounded-md bg-slate-900/50">
-                        <span class="text-xs text-slate-400 w-10 text-left">H. ${m.round}</span>
-                        <div class="flex-1 text-center text-sm flex justify-center items-center">
-                            <span class="${homeClass} font-semibold flex-1 text-right pr-2 truncate">${m.home}</span>
-                            <span class="mx-2 font-mono text-base ${resultClass}">${score}</span>
-                            <span class="${awayClass} font-semibold flex-1 text-left pl-2 truncate">${m.away}</span>
-                        </div>
-                        <span class="text-xs text-slate-400 w-10 text-right">${isHome ? '(EV)' : '(DŞ)'}</span>
-                    </div>
-                `;
-            });
-            
-            sectionHtml += `</div>`;
-            return sectionHtml;
-        }
-
-        window.showPlayerFixtures = function(playerName) {
-            document.getElementById('player-fixtures-title').textContent = `${playerName} Maçları`;
-            
-            const playerMatches = matches
-                .filter(m => m.home === playerName || m.away === playerName)
-                .sort((a, b) => a.round - b.round); // Maçları hafta sırasına göre sırala
-            
-            const playedMatches = playerMatches.filter(m => m.homeScore !== null && m.awayScore !== null);
-            const upcomingMatches = playerMatches.filter(m => m.homeScore === null || m.awayScore === null);
-            
-            const contentHtml = `
-                ${generateMatchSection(playedMatches, "Oynanan Maçlar", "bg-green-700/20", playerName)}
-                ${generateMatchSection(upcomingMatches, "Yaklaşan Maçlar", "bg-yellow-700/20", playerName)}
-                
-                <div class="text-xs text-slate-400 mt-4 text-center p-3 rounded-lg bg-slate-900/50">
-                    Galibiyetler Yeşil, Mağlubiyetler Kırmızı, Beraberlikler Sarı renkte gösterilir.
-                </div>
-            `;
-
-            document.getElementById('player-fixtures-content').innerHTML = contentHtml;
-            document.getElementById('player-fixtures-modal').classList.remove('hidden');
         }
         
         // ---------- FİKSTÜR VE SKOR İŞLEMLERİ ----------
@@ -449,35 +431,57 @@
             return array;
         }
 
-        function generateFixtures() {
-            if (players.length < 2) {
-                 showMessage("Hata: Fikstür çekmek için en az 2 oyuncu eklenmelidir.", 'error');
+        // Genel Fikstür oluşturucu (Tekler veya Çiftler için)
+        function generateFixtures(useTeams = false) {
+            const entityList = useTeams ? teams.map(t => t.name) : players.map(p => p.name);
+            
+            if (entityList.length < 2) {
+                 showMessage("Hata: Fikstür çekmek için en az 2 takım/canavar eklenmelidir.", 'error');
+                 matches = [];
+                 totalRounds = 0;
+                 saveState();
+                 renderFixtures();
+                 renderStandings();
                  return;
             }
 
-            // Mevcut maçları temizle
             matches = []; 
 
-            // Fikstür oluşturmak için sadece isimleri kullanıyoruz
-            let tempPlayersNames = shuffle([...players.map(p => p.name)]);
+            let tempEntityNames = shuffle([...entityList]);
             
-            const isOdd = tempPlayersNames.length % 2 !== 0;
+            const isOdd = tempEntityNames.length % 2 !== 0;
             if (isOdd) {
-                tempPlayersNames.push(null); // BYE için null ekle
+                tempEntityNames.push(null); // BYE için null ekle
             }
-            const n = tempPlayersNames.length; 
+            const n = tempEntityNames.length; 
             
-            totalRounds = n - 1; // Toplam hafta sayısını global değişkene ata
-            currentRound = 1; // Yeni fikstür çekildiğinde 1. haftaya dön
+            totalRounds = n - 1; 
+            currentRound = 1; 
 
             for (let round = 0; round < totalRounds; round++) {
                 
                 for (let i = 0; i < n / 2; i++) {
-                    const p1 = tempPlayersNames[i];
-                    const p2 = tempPlayersNames[n - 1 - i];
+                    const p1 = tempEntityNames[i];
+                    const p2 = tempEntityNames[n - 1 - i];
 
-                    if (p1 === null || p2 === null) continue; 
+                    if (p1 === null && p2 === null) continue; 
+                    
+                    // BYE durumu
+                    if (p1 === null || p2 === null) {
+                         const byeEntity = p1 === null ? p2 : p1;
+                         matches.push({
+                            id: generateUniqueId(),
+                            round: round + 1,
+                            home: byeEntity,
+                            away: null, // Bay (BYE)
+                            homeScore: null,
+                            awayScore: null
+                        });
+                        continue;
+                    }
 
+
+                    // Ev/Deplasman rastgele belirlenir
                     const isSwapped = Math.random() > 0.5;
                     const home = isSwapped ? p2 : p1;
                     const away = isSwapped ? p1 : p2;
@@ -492,38 +496,103 @@
                     });
                 }
                 
-                // Rotasyon Mantığı
+                // Rotasyon Mantığı (Bay oyuncuyu sabit tutma)
                 if (n > 2) { 
-                    const fixedPlayer = tempPlayersNames[0];
-                    const rotatingPart = tempPlayersNames.slice(1);
+                    // n tek ise, son eleman (null) sabit kalmalı, diğerleri dönmeli
+                    const rotatingPart = tempEntityNames.slice(0, n - 1);
                     const lastRotating = rotatingPart.pop(); 
                     rotatingPart.unshift(lastRotating); 
-                    tempPlayersNames = [fixedPlayer, ...rotatingPart];
+                    tempEntityNames = [...rotatingPart, tempEntityNames[n-1]];
                 }
             }
             
-            saveMatches();
+            saveState();
             renderFixtures();
             renderStandings();
-            showMessage("Yeni fikstür başarıyla çekildi ve skorlar sıfırlandı!", 'success');
+            
+            const message = useTeams ? "Yeni Çiftler Ligi fikstürü başarıyla çekildi!" : "Yeni Tekler Ligi fikstürü başarıyla çekildi!";
+            showMessage(message, 'success');
         }
 
+        // Çiftli Turnuva Takımlarını Kurar ve Fikstür Çeker
+        window.generateDoublesTeamsAndFixtures = function() {
+            if (players.length < 4 || players.length % 2 !== 0) {
+                showMessage("Hata: Çiftli turnuva için çift sayıda (min 4) canavar gereklidir.", 'error', 6000);
+                return;
+            }
+
+            // 1. Tekler puan durumunu hesapla (Takımları kurmak için sıralama lazım)
+            const sortedSingles = getStandingsData(false); 
+            const n = sortedSingles.length;
+
+            teams = [];
+            
+            // 2. Çapraz Eşleştirme (1. vs sonuncu, 2. vs sondan bir önceki...)
+            for (let i = 0; i < n / 2; i++) {
+                const p1 = sortedSingles[i]; 
+                const p2 = sortedSingles[n - 1 - i];
+
+                const teamName = `${p1.name} & ${p2.name}`;
+                
+                teams.push({
+                    id: generateUniqueId(),
+                    name: teamName,
+                    player1Name: p1.name, 
+                    player2Name: p2.name
+                });
+            }
+
+            // 3. Modu Çiftler'e çevir ve Fikstürü çek
+            isDoublesMode = true;
+            updateAppTitle(); 
+            generateFixtures(true); // Takımları kullanarak fikstür çek
+
+            closeSettingsModal();
+        }
+        
+        // Tekler Ligi'ne geri dönmek
+        window.startSinglesTournamentConfirmation = function() {
+            if (players.length < 2) {
+                showMessage("Tekler Ligi'ne dönmek için en az 2 canavar olmalıdır.", 'error', 5000);
+                return;
+            }
+
+            showConfirmationModal(
+                "Tekler Ligi'ne Geri Dönüş Onayı",
+                `Tüm Çiftler Ligi skorları silinecek, takımlar dağıtılacak ve mevcut canavarlar arasında yeni bir Tekler Ligi fikstürü oluşturulacaktır. Emin misiniz?`,
+                (confirmed) => {
+                    if (confirmed) {
+                        isDoublesMode = false;
+                        teams = []; // Takımları temizle
+
+                        // Yeni tekler fikstürü çek
+                        generateFixtures(false); 
+
+                        // Başlık ve UI güncellemeleri
+                        updateAppTitle();
+                        closeSettingsModal();
+                    }
+                },
+                "Tekler Moduna Geç"
+            );
+        }
+        
         window.updateScore = function(matchId, type, value) {
             const scoreValue = value === '' ? null : parseInt(value);
             const matchIndex = matches.findIndex(m => m.id === matchId);
             
             if (matchIndex !== -1) {
                 matches[matchIndex][type] = scoreValue;
-                saveMatches();
-                renderStandings(); // Skor güncellendiğinde puan durumu da güncellenmeli
+                saveState();
+                renderStandings(); 
             }
         }
         
-        // Hafta değiştirme fonksiyonu
         window.changeRound = function(direction) {
             const newRound = currentRound + direction;
             if (newRound >= 1 && newRound <= totalRounds) {
                 currentRound = newRound;
+                localStorage.setItem('currentRound', currentRound);
                 renderFixtures();
             }
         }
@@ -531,21 +600,32 @@
 
         // ---------- PUAN DURUMU VE FİKSTÜR RENDER ETME ----------
         
-        function renderStandings() {
+        function getStandingsData(useTeams) {
+            const entityList = useTeams ? teams : players;
             const stats = {};
             
-            players.forEach(p => {
-                stats[p.name] = { name: p.name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+            entityList.forEach(e => {
+                stats[e.name] = { name: e.name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
             });
 
             matches.forEach(m => {
+                // Bay (BYE) maçlarını atla
+                if (m.away === null) return;
+                
+                // Eğer maç, aktif moddaki (Tekler/Çiftler) oyuncular/takımlar arasındaysa hesapla
+                const entityNames = entityList.map(e => e.name);
+                if (!entityNames.includes(m.home) || !entityNames.includes(m.away)) {
+                    return; 
+                }
+
                 if (m.homeScore !== null && m.awayScore !== null) {
                     const h = m.home;
                     const a = m.away;
                     const hs = m.homeScore;
                     const as = m.awayScore;
 
-                    if (!stats[h] || !stats[a]) return; // Geçersiz oyuncu adı kontrolü
+                    // Eğer istatistik nesneleri yoksa (Tekler modu aktifken Çiftler maçı skoru hesaplanmaz vs)
+                    if (!stats[h] || !stats[a]) return;
 
                     stats[h].played++;
                     stats[a].played++;
@@ -565,7 +645,8 @@
                 }
             });
 
-            const sorted = Object.values(stats).sort((a, b) => {
+            // Sıralama: Puan (büyükten küçüğe), Averaj (büyükten küçüğe), Attığı Gol (büyükten küçüğe)
+            sortedPlayers = Object.values(stats).sort((a, b) => {
                 const gdA = a.gf - a.ga;
                 const gdB = b.gf - b.ga;
                 
@@ -573,6 +654,12 @@
                 if (gdB !== gdA) return gdB - gdA;
                 return b.gf - a.gf;
             });
+            
+            return sortedPlayers;
+        }
+
+        function renderStandings() {
+            const sorted = getStandingsData(isDoublesMode);
 
             const tbody = document.getElementById('standings-body');
             tbody.innerHTML = '';
@@ -583,18 +670,22 @@
                 
                 let rankClass = "text-slate-500";
                 let rankIcon = index + 1;
-                // Sarı/Siyah temaya uygun renkler
-                if (index === 0) { rankClass = "text-yellow-400 font-bold"; rankIcon = '<i class="fas fa-crown"></i>'; }
+                
+                if (index === 0) { rankClass = "text-yellow-400 font-bold"; rankIcon = '<i class="fas fa-skull"></i>'; } 
                 else if (index === 1) { rankClass = "text-gray-300 font-bold"; }
                 else if (index === 2) { rankClass = "text-amber-700 font-bold"; }
+
+                // Çiftler modunda oyuncu maçları gösterilmez (sadece Takım olarak var)
+                const entityNameHtml = isDoublesMode 
+                    ? `<span class="font-medium text-white">${team.name}</span>`
+                    : `<span class="font-medium text-white">${team.name}</span>`; // Tekler modunda da detayı kaldırdık
 
                 const row = `
                     <tr class="transition-colors ${index % 2 === 0 ? 'bg-slate-800/30' : ''}">
                         <td class="p-4 text-center font-mono ${rankClass}">${rankIcon}</td>
-                        <td class="p-4 font-medium text-white flex items-center gap-3 cursor-pointer hover:text-blue-400" onclick="showPlayerFixtures('${team.name.replace(/'/g, "\\'")}')">
+                        <td class="p-4 font-medium text-white flex items-center gap-3">
                             <div class="w-1 h-6 rounded-r ${index === 0 ? 'bg-yellow-400' : 'bg-blue-600'}"></div>
-                            <!-- Sadece ad -->
-                            ${team.name}
+                            ${entityNameHtml}
                         </td>
                         <td class="p-4 text-center font-mono text-slate-300">${team.played}</td>
                         <td class="p-4 text-center font-mono text-green-400 hidden sm:table-cell">${team.won}</td>
@@ -617,13 +708,14 @@
             const nextBtn = document.getElementById('next-round-btn');
             
             container.innerHTML = '';
+            
+            const entityCount = isDoublesMode ? teams.length : players.length;
 
-            // Hata Kontrolleri
-            if (players.length < 2) {
+            if (totalRounds === 0 || entityCount < 2) {
                 const messageHtml = `<div class="text-center p-8 bg-slate-900/50 rounded-xl">
                        <i class="fas fa-user-times text-4xl text-red-500 mb-3"></i>
-                       <p class="text-lg font-semibold text-white">Yeterli oyuncu yok.</p>
-                       <p class="text-slate-400 text-sm">Lütfen sol üstteki Ayarlar ikonuna tıklayarak en az 2 oyuncu ekleyin.</p>
+                       <p class="text-lg font-semibold text-white">Yeterli canavar/takım yok veya fikstür çekilmedi.</p>
+                       <p class="text-slate-400 text-sm">Lütfen Ayarlar ikonuna tıklayarak canavar ekleyin ve fikstür çekin.</p>
                    </div>`;
                 container.innerHTML = messageHtml;
                 roundTitleEl.textContent = "Fikstür Yok";
@@ -632,30 +724,24 @@
                 return;
             }
             
-            if (matches.length === 0) {
-                const messageHtml = `<div class="text-center p-8 bg-slate-900/50 rounded-xl">
-                       <i class="fas fa-calendar-times text-4xl text-yellow-500 mb-3"></i>
-                       <p class="text-lg font-semibold text-white">Fikstür oluşturulmadı.</p>
-                       <p class="text-slate-400 text-sm">Lütfen sol üstteki Ayarlar ikonuna tıklayarak "Yeni Fikstür Çek" butonuna basın.</p>
-                   </div>`;
-                container.innerHTML = messageHtml;
-                roundTitleEl.textContent = "Fikstür Yok";
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-                return;
-            }
+            const currentRoundMatches = matches.filter(m => m.round === currentRound);
             
             // Haftalık Navigasyon Güncellemesi
-            // Sadece hafta numarası ve "Hafta" yazısı kaldı
             roundTitleEl.textContent = `${currentRound}. Hafta`;
             prevBtn.disabled = currentRound === 1;
             nextBtn.disabled = currentRound === totalRounds;
 
-            const currentRoundMatches = matches.filter(m => m.round === currentRound);
-            
             let matchesHtml = '<div class="grid gap-3 md:grid-cols-2">';
-            
+            let byeEntity = null;
+
             currentRoundMatches.forEach(m => {
+                
+                // BYE maçı
+                if (m.away === null) {
+                    byeEntity = m.home;
+                    return; 
+                }
+
                 const isPlayed = m.homeScore !== null && m.awayScore !== null;
                 const borderClass = isPlayed ? 'border-green-500/30 bg-green-900/10' : 'border-slate-700 bg-slate-800/40';
 
@@ -675,7 +761,7 @@
                 
                 matchesHtml += `
                     <div class="flex items-center justify-between p-3 rounded-lg border ${borderClass} transition-all hover:bg-slate-700">
-                        <!-- Home Team (Sadece isim) -->
+                        <!-- Home Entity (Oyuncu/Takım) -->
                         <div class="flex-1 text-right pr-3 text-sm font-semibold truncate text-slate-300">
                             ${m.home}
                         </div>
@@ -684,7 +770,7 @@
                             ${scoreInputs}
                         </div>
 
-                        <!-- Away Team (Sadece isim) -->
+                        <!-- Away Entity (Oyuncu/Takım) -->
                         <div class="flex-1 text-left pl-3 text-sm font-semibold truncate text-slate-300">
                             ${m.away}
                         </div>
@@ -693,32 +779,43 @@
             });
 
             matchesHtml += '</div>';
+
+            // BYE (Bay) mesajı ekleme
+            if (byeEntity) {
+                 matchesHtml += `
+                     <div class="mt-6 text-center p-3 rounded-lg bg-yellow-900/30 border border-yellow-700 text-yellow-300 font-medium">
+                         <i class="fas fa-user-alt-slash mr-2"></i> ${byeEntity} bu hafta BAY (dinleniyor).
+                     </div>
+                 `;
+            }
+
             container.innerHTML = matchesHtml;
         }
         
         // ---------- OYUNCU YÖNETİMİ ----------
 
-        // Ayarlar sekmesindeki oyuncu listesini günceller
         function renderPlayerSettings() {
             const container = document.getElementById('player-list-container');
             const playerCountElement = document.getElementById('player-count-display');
             const warningElement = document.getElementById('player-warning');
             
             container.innerHTML = '';
-            playerCountElement.textContent = `Mevcut Oyuncular (${players.length})`;
+            playerCountElement.textContent = `Mevcut Canavarlar (${players.length})`;
             
             if (players.length % 2 !== 0 || players.length < 4) {
                  warningElement.classList.remove('hidden');
             } else {
                  warningElement.classList.add('hidden');
             }
+            
+            // Başlık input'unu güncel tut
+            document.getElementById('app-custom-title').value = customTitle;
 
             players.forEach(player => {
                 
                 const li = `
                     <li class="flex justify-between items-center bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                         <div class="flex items-center gap-3">
-                            <!-- Sadece ad -->
                             <span class="font-medium text-white">${player.name}</span>
                         </div>
                         <button onclick="removePlayerConfirmation('${player.id}', '${player.name.replace(/'/g, "\\'")}')" class="text-red-400 hover:text-red-500 transition-colors">
@@ -735,7 +832,7 @@
             let name = inputName.value.trim();
             
             if (!name) {
-                showMessage("Lütfen bir oyuncu adı girin.", 'error'); 
+                showMessage("Lütfen bir canavar adı girin.", 'error'); 
                 return;
             }
 
@@ -743,52 +840,57 @@
             name = name.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
 
             if (players.some(p => p.name === name)) {
-                showMessage(`${name} zaten listede var.`, 'error');
+                showMessage(`${name} zaten depoda var.`, 'error');
                 return;
             }
             
-            // Oyuncu nesnesi sadece id ve name içerir
-            players.push({
-                id: generateUniqueId(),
-                name: name
-            });
+            if (isDoublesMode) {
+                 showMessage("Hata: Çiftler modunda canavar ekleyemezsiniz. Önce Tekler Ligi'ne geçmeniz gerekir.", 'error', 5000);
+                 return;
+            }
             
-            savePlayers();
+            players.push({ id: generateUniqueId(), name: name });
+            
+            saveState();
             inputName.value = ''; 
             renderPlayerSettings();
 
             if (matches.length > 0) {
                 showConfirmationModal(
                     "Fikstür Güncelleme",
-                    `Oyuncu listesi değişti. Yeni fikstür oluşturulsun mu? (Mevcut skorlar silinecektir)`,
+                    `Canavar listesi değişti. Yeni fikstür oluşturulsun mu? (Mevcut skorlar silinecektir)`,
                     (confirmed) => {
                         if (confirmed) {
-                            generateFixtures();
+                            generateFixtures(false);
                             closeSettingsModal();
                         } else {
-                            showMessage(`${name} listeye eklendi.`, 'success');
+                            showMessage(`${name} depoya eklendi.`, 'success');
                         }
                     }
                 );
             } else {
-                showMessage(`${name} listeye eklendi.`, 'success');
+                showMessage(`${name} depoya eklendi.`, 'success');
             }
         }
 
         window.removePlayerConfirmation = function(playerId, name) {
             if (players.length <= 1) {
-                showMessage("Ligde en az 1 oyuncu kalmalıdır.", 'error');
+                showMessage("Depoda en az 1 canavar kalmalıdır.", 'error');
                 return;
             }
 
             showConfirmationModal(
-                "Oyuncu Çıkarma Onayı",
-                `${name} adlı oyuncuyu ligden çıkarmak istediğinizden emin misiniz? Fikstür yenilenecek ve tüm skorlar silinecektir.`,
+                "Canavar Çıkarma Onayı",
+                `${name} adlı canavarı depodan (ligden) çıkarmak istediğinizden emin misiniz? Fikstür yenilenecek ve tüm skorlar silinecektir.`,
                 (confirmed) => {
                     if (confirmed) {
                         players = players.filter(p => p.id !== playerId);
-                        savePlayers();
-                        generateFixtures(); // Fikstürü otomatik yenile
+                        teams = []; // Takımları da temizle
+                        isDoublesMode = false;
+                        updateAppTitle();
+
+                        saveState();
+                        generateFixtures(false); // Tekler fikstürünü otomatik yenile
                         renderPlayerSettings();
                     }
                 },
@@ -797,48 +899,63 @@
         }
 
         window.resetFixturesConfirmation = function() {
-            if (players.length < 2) {
-                showMessage("Hata: Fikstür çekmek için en az 2 oyuncu olmalıdır. Lütfen oyuncu ekleyin.", 'error');
+            const entityType = isDoublesMode ? "takım" : "canavar";
+            const entityCount = isDoublesMode ? teams.length : players.length;
+
+            if (entityCount < 2) {
+                showMessage(`Hata: Fikstür çekmek için en az 2 ${entityType} olmalıdır. Lütfen canavar ekleyin.`, 'error');
                 return;
             }
             
             showConfirmationModal(
-                "Fikstür Sıfırlama Onayı",
-                "Tüm maç skorları silinecek ve mevcut oyuncu listesine göre yepyeni, rastgele bir fikstür çekilecektir. Emin misiniz?",
+                isDoublesMode ? "Çiftler Fikstürünü Yenile" : "Tekler Ligi Fikstürünü Yenile",
+                `Tüm maç skorları silinecek ve mevcut ${entityCount} ${entityType} listesine göre yepyeni, rastgele bir fikstür çekilecektir. Emin misiniz?`,
                 (confirmed) => {
                     if (confirmed) {
-                        generateFixtures();
-                        closeSettingsModal();
-                        showTab('fixtures'); 
+                        generateFixtures(isDoublesMode);
                     }
                 },
                 "Fikstür Çek"
+            );
+        }
+        
+        window.startDoublesTournamentConfirmation = function() {
+             if (players.length < 4 || players.length % 2 !== 0) {
+                showMessage("Hata: Çiftli turnuva için çift sayıda (min 4) canavar gereklidir. Lütfen canavar sayısını ayarlayın.", 'error', 6000);
+                return;
+            }
+
+            showConfirmationModal(
+                "Çiftli Turnuvaya Geçiş Onayı",
+                `Tüm mevcut skorlar silinecek. Mevcut sıralamaya göre takımlar kurulacak ve yeni Çiftler Ligi fikstürü oluşturulacaktır. Emin misiniz?`,
+                (confirmed) => {
+                    if (confirmed) {
+                        generateDoublesTeamsAndFixtures();
+                    }
+                },
+                "Çiftler Moduna Geç"
             );
         }
 
         window.resetLeagueConfirmation = function() {
             showConfirmationModal(
                 "TÜM VERİLERİ SIFIRLA",
-                "DİKKAT! Tüm oyuncular, skorlar ve fikstür yerel depolamadan silinecek. Uygulama fabrika ayarlarına dönecek. Emin misin?",
+                "DİKKAT! Tüm canavarlar, takımlar, skorlar ve fikstür yerel depolamadan silinecek. Uygulama fabrika ayarlarına dönecek. Emin misin?",
                 (confirmed) => {
                     if (confirmed) {
-                        localStorage.removeItem('players');
-                        localStorage.removeItem('matches');
-                        location.reload(); // Sayfayı yenileyerek uygulamayı sıfırla
+                        localStorage.clear();
+                        location.reload(); 
                     }
                 },
                 "Tümünü Sil"
             );
         }
         
-        // Sekme Değiştirme
         window.showTab = function(tabName) {
             
-            // Tüm sekmeleri gizle
             document.getElementById('tab-standings').classList.add('hidden');
             document.getElementById('tab-fixtures').classList.add('hidden');
 
-            // Tüm butonların stilini sıfırla
             ['standings', 'fixtures'].forEach(tab => {
                 const btn = document.getElementById('btn-' + tab);
                 if (btn) {
@@ -847,7 +964,6 @@
                 }
             });
 
-            // İstenen sekmeyi göster ve butonu aktif yap
             document.getElementById('tab-' + tabName).classList.remove('hidden');
             const activeBtn = document.getElementById('btn-' + tabName);
             if (activeBtn) {
@@ -855,10 +971,7 @@
                 activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-700');
             }
             
-            // İlgili sekmeyi render et
             if (tabName === 'fixtures') {
-                // Fikstür sekmesine geçildiğinde mevcut haftayı tekrar render et
-                // Eğer maç yoksa currentRound 1 olarak kalır, renderFixtures zaten mesaj verir.
                 renderFixtures();
             } else if (tabName === 'standings') {
                 renderStandings();
@@ -868,13 +981,12 @@
         // Uygulamayı Başlat
         window.initApp = function() {
             loadData();
-            // Yüklendikten sonra fikstür varsa ve totalRounds > 0 ise, currentRound'u kontrol et
             if (totalRounds > 0 && currentRound > totalRounds) {
-                currentRound = totalRounds; // Maksimum hafta sayısını aşmasın
+                currentRound = totalRounds; 
             } else if (totalRounds === 0) {
                  currentRound = 1;
             }
-            showTab('standings'); // Varsayılan olarak puan durumunu göster
+            showTab('standings'); 
         }
 
     </script>
