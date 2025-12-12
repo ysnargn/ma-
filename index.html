@@ -78,7 +78,7 @@
         <!-- Menü Butonları -->
         <div class="flex rounded-lg bg-slate-800 p-1 shadow-lg" id="menu-buttons">
             <button onclick="showTab('standings')" id="btn-standings" class="flex-1 py-3 rounded-md transition-all font-bold bg-blue-600 text-white shadow-md">
-                <i class="fas fa-list-ol mr-2"></i> Canavar Sıralaması
+                <i class="fas fa-list-ol mr-2"></i> Puan Durumu
             </button>
             <button onclick="showTab('fixtures')" id="btn-fixtures" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700">
                 <i class="fas fa-calendar-alt mr-2"></i> Maç Fikstürü
@@ -872,6 +872,57 @@
                 showMessage(`${name} depoya eklendi.`, 'success');
             }
         }
+        
+        // Yeni fonksiyon: Toplu oyuncu ekleme
+        window.addMultiplePlayers = function(playerNames) {
+            const addedNames = [];
+            let needsFixtureUpdate = matches.length > 0;
+            
+            if (isDoublesMode) {
+                showMessage("Hata: Çiftler modunda canavar ekleyemezsiniz. Önce Tekler Ligi'ne geçmeniz gerekir.", 'error', 5000);
+                return;
+            }
+
+            playerNames.forEach(rawName => {
+                let name = rawName.trim();
+                if (!name) return; 
+
+                // İsim formatlama
+                name = name.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+
+                if (!players.some(p => p.name === name)) {
+                    players.push({ id: generateUniqueId(), name: name });
+                    addedNames.push(name);
+                }
+            });
+
+            if (addedNames.length > 0) {
+                saveState();
+                renderPlayerSettings(); // Ayarlar modalı açıksa günceller
+
+                if (needsFixtureUpdate) {
+                     // Oyuncu eklendiği için fikstürü yenileme onayı ver
+                     showConfirmationModal(
+                        "Fikstür Güncelleme",
+                        `${addedNames.length} yeni canavar eklendi. Yeni fikstür oluşturulsun mu? (Mevcut skorlar silinecektir)`,
+                        (confirmed) => {
+                            if (confirmed) {
+                                generateFixtures(false);
+                                closeSettingsModal();
+                            } else {
+                                showMessage(`${addedNames.length} canavar eklendi. Fikstür yenilenmedi.`, 'success', 5000);
+                            }
+                        }
+                    );
+                } else {
+                    generateFixtures(false); // Skor yoksa otomatik çek
+                    showMessage(`${addedNames.length} canavar eklendi ve yeni fikstür çekildi.`, 'success');
+                }
+            } else {
+                showMessage("Eklenmek istenen canavarlar zaten depoda bulunuyor.", 'error');
+            }
+        }
+
 
         window.removePlayerConfirmation = function(playerId, name) {
             if (players.length <= 1) {
@@ -985,6 +1036,22 @@
                 currentRound = totalRounds; 
             } else if (totalRounds === 0) {
                  currentRound = 1;
+                 
+                 // Başlangıçta oyuncular yoksa, otomatik ekleme yap
+                 if (players.length === 0) {
+                     const initialPlayers = [
+                         "Alper Gündüz", "Ersen Dağdeviren", "Birol Lüy", 
+                         "Orhan Akmaz", "Hakan Kaya", "Ömer Aksoy", 
+                         "Serkan Gözde", "Osman Kaplan", "Ahmet Kunbetli", 
+                         "Ahmet Çetin", "Yasin Argana", "Sedat Şafak"
+                     ];
+                     // Oyuncuları ekle ve fikstürü çek
+                     addMultiplePlayers(initialPlayers);
+                     
+                     // Oyuncular eklendiği için ayarlar modalını açma, direkt lige odaklan
+                     // Fikstür render edilecek
+                     
+                 }
             }
             showTab('standings'); 
         }
