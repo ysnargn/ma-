@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Şampiyonlar Ligi (Haftalık Fikstür)</title>
+    <title>Masa Tenisi Turnuvası (Haftalık Fikstür)</title>
     <!-- Tailwind CSS (Tasarım için) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome (İkonlar için) -->
@@ -15,8 +15,10 @@
             color: #e2e8f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .cl-gradient {
-            background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 50%, #1e3a8a 100%);
+        /* CL GRADIENT yerine SARI TEMA */
+        .tt-gradient {
+            /* Sarıdan biraz daha koyu bir tona geçiş */
+            background: linear-gradient(90deg, #f59e0b 0%, #facc15 50%, #f59e0b 100%);
         }
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
@@ -60,17 +62,18 @@
 
     <div class="max-w-4xl mx-auto space-y-6">
         
-        <!-- Başlık Alanı -->
-        <div class="text-center py-8 relative overflow-hidden rounded-2xl shadow-2xl cl-gradient border border-blue-400/30">
-            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
+        <!-- Başlık Alanı (SARI TEMA UYGULANDI) -->
+        <div class="text-center py-8 relative overflow-hidden rounded-2xl shadow-2xl tt-gradient border border-yellow-700/50">
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
             <div class="relative z-10">
-                <!-- KUPA RENGİ DEĞİŞİKLİĞİ: text-red-600 kullanıldı -->
-                <i class="fas fa-trophy text-5xl text-red-600 mb-2 drop-shadow-lg"></i>
-                <h1 class="text-3xl md:text-4xl font-extrabold tracking-wider text-white drop-shadow-md uppercase">Şampiyonlar Ligi</h1>
+                <!-- MASA TENİSİ İKONU -->
+                <i class="fas fa-table-tennis-paddle-ball text-5xl text-gray-800 mb-2 drop-shadow-lg"></i>
+                <!-- BAŞLIK METNİ DEĞİŞTİ -->
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-wider text-gray-900 drop-shadow-md uppercase">MASA TENİSİ TURNUVASI</h1>
             </div>
         </div>
 
-        <!-- Menü Butonları (Sadece Puan Durumu ve Fikstür kaldı) -->
+        <!-- Menü Butonları -->
         <div class="flex rounded-lg bg-slate-800 p-1 shadow-lg" id="menu-buttons">
             <button onclick="showTab('standings')" id="btn-standings" class="flex-1 py-3 rounded-md transition-all font-bold bg-blue-600 text-white shadow-md">
                 <i class="fas fa-list-ol mr-2"></i> Puan Durumu
@@ -118,14 +121,14 @@
                 </div>
             </div>
 
-            <!-- SEKMESİ: FİKSTÜR (HAFTALIK GÖSTERİM İÇİN GÜNCELLENDİ) -->
+            <!-- SEKMESİ: FİKSTÜR (HAFTALIK GÖSTERİM) -->
             <div id="tab-fixtures" class="hidden p-0 space-y-6">
                 <!-- Hafta Navigasyonu -->
                 <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900/50 shadow-lg border border-slate-700">
                     <button id="prev-round-btn" onclick="changeRound(-1)" class="p-2 text-blue-400 hover:text-blue-200 disabled:text-slate-600 disabled:cursor-not-allowed transition-colors rounded-full hover:bg-slate-700/50">
                         <i class="fas fa-chevron-left text-xl"></i>
                     </button>
-                    <!-- YAZI BURADAN DEĞİŞTİRİLDİ: Sadece hafta numarası ve "Hafta" yazısı kaldı -->
+                    <!-- YAZI BASİTLEŞTİRİLDİ: Sadece hafta numarası ve "Hafta" yazısı kaldı -->
                     <h3 id="round-title" class="text-center text-blue-400 font-bold uppercase tracking-widest text-lg md:text-xl">
                         1. Hafta
                     </h3>
@@ -580,6 +583,7 @@
                 
                 let rankClass = "text-slate-500";
                 let rankIcon = index + 1;
+                // Sarı/Siyah temaya uygun renkler
                 if (index === 0) { rankClass = "text-yellow-400 font-bold"; rankIcon = '<i class="fas fa-crown"></i>'; }
                 else if (index === 1) { rankClass = "text-gray-300 font-bold"; }
                 else if (index === 2) { rankClass = "text-amber-700 font-bold"; }
@@ -642,7 +646,7 @@
             }
             
             // Haftalık Navigasyon Güncellemesi
-            // BURADAKİ YAZI BASİTLEŞTİRİLDİ: Sadece hafta numarası ve "Hafta" yazısı kaldı
+            // Sadece hafta numarası ve "Hafta" yazısı kaldı
             roundTitleEl.textContent = `${currentRound}. Hafta`;
             prevBtn.disabled = currentRound === 1;
             nextBtn.disabled = currentRound === totalRounds;
