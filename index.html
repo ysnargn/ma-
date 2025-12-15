@@ -1,1242 +1,238 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masa Canavarları Ligi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* CSS ve Stil Kodları */
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .tt-gradient { background: linear-gradient(90deg, #ca8a04 0%, #facc15 50%, #ca8a04 100%); }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        tr:hover td { background-color: rgba(59, 130, 246, 0.1); }
-        /* Sayı inputları için okları gizle */
-        input[type=number] { -moz-appearance: textfield; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #3b82f6; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
-        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .icon-picker-item {
-            @apply w-10 h-10 flex items-center justify-center rounded-full text-2xl text-slate-400 hover:bg-slate-600 cursor-pointer transition-all;
-        }
-        .icon-picker-item.selected {
-            @apply bg-blue-600 text-white shadow-lg ring-2 ring-blue-400;
-        }
-        /* Ayarlar Sekmeleri Stili */
-        .settings-tab-btn {
-            @apply w-full text-left p-3 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition-colors text-sm sm:text-base;
-        }
-        .settings-tab-btn.selected {
-            @apply bg-blue-600 text-white hover:bg-blue-700 shadow-lg;
-        }
-        /* Yeni: Set Skoru Girişi Odak Stili */
-        .set-input-box:focus {
-             outline: 2px solid #3b82f6; /* Focus ring */
-             border-color: transparent;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lig Uygulaması - Supabase Bağlantılı</title>
 
-        /* Tüm sütunlar için gizleme sınıfı */
-        .col-hide { display: none !important; }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        /* Sadece görünür olduğunda tablo hücresi olarak göster */
-        /* Bu sınıflar sadece JS tarafından eklenip kaldırılacaktır */
-        .col-entity { display: table-cell; }
-        .col-played { display: table-cell; }
-        .col-wins { display: table-cell; }
-        .col-draws { display: table-cell; }
-        .col-losses { display: table-cell; }
-        .col-goals-for { display: table-cell; }
-        .col-goals-against { display: table-cell; }
-        .col-average { display: table-cell; }
-        .col-points { display: table-cell; }
+<style>
+body { font-family: Arial; margin: 20px; }
+input, select, button { padding: 6px; margin: 4px; }
+.container { max-width: 900px; margin: auto; }
+.player-box, .match-box, .list-box { border: 1px solid #aaa; padding: 12px; margin-bottom: 16px; }
+</style>
 
-        /* Mobil görünürlük optimizasyonu için varsayılan gizlilik kaldırıldı */
+<script>
+/* --------------------------- SUPABASE CLIENT --------------------------- */
 
-    </style>
+const supabaseUrl = "BURAYA_KENDI_URLIN_GELECEK";
+const supabaseKey = "BURAYA_ANON_KEY_GELECEK";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+/* --------------------------- GLOBAL STATE --------------------------- */
+
+let players = [];
+let matches = [];
+let totalRounds = 0;
+
+/* --------------------------- LOAD DATA --------------------------- */
+
+async function loadDataFromDB() {
+    const { data: playerRows } = await supabase.from("players").select("*");
+    const { data: matchRows } = await supabase.from("matches").select("*");
+
+    players = playerRows || [];
+    matches = matchRows || [];
+
+    players.sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+
+    matches.sort((a,b)=>{
+        if(a.round!==b.round) return a.round - b.round;
+        return a.home.localeCompare(b.home,'tr');
+    });
+
+    if(matches.length>0){
+        totalRounds = Math.max(...matches.map(m=>m.round));
+    } else totalRounds = 0;
+
+    renderPlayers();
+    renderMatches();
+    renderStandings();
+}
+
+/* --------------------------- SAVE DATA --------------------------- */
+
+async function savePlayersToDB() {
+    await supabase.from("players").delete().neq("id","");
+    await supabase.from("players").insert(players);
+}
+
+async function saveMatchesToDB() {
+    await supabase.from("matches").delete().neq("id","");
+    await supabase.from("matches").insert(matches);
+}
+
+/* --------------------------- PLAYER FUNCTIONS --------------------------- */
+
+function addPlayer() {
+    const name = document.getElementById("playerName").value.trim();
+    if(!name) return;
+
+    const id = crypto.randomUUID();
+    players.push({ id, name });
+    players.sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+
+    savePlayersToDB();
+    renderPlayers();
+
+    document.getElementById("playerName").value="";
+}
+
+function renderPlayers() {
+    const box = document.getElementById("playerList");
+    box.innerHTML = "";
+
+    players.forEach(p=>{
+        const row = document.createElement("div");
+        row.textContent = p.name;
+        box.appendChild(row);
+    });
+
+    fillPlayerSelects();
+}
+
+function fillPlayerSelects(){
+    const h = document.getElementById("homePlayer");
+    const a = document.getElementById("awayPlayer");
+
+    h.innerHTML = "";
+    a.innerHTML = "";
+
+    players.forEach(p=>{
+        const op1=document.createElement("option");
+        op1.value=p.id; op1.textContent=p.name;
+        h.appendChild(op1);
+
+        const op2=document.createElement("option");
+        op2.value=p.id; op2.textContent=p.name;
+        a.appendChild(op2);
+    });
+}
+
+/* --------------------------- MATCH FUNCTIONS --------------------------- */
+
+function addMatch() {
+    const round = parseInt(document.getElementById("round").value);
+    const home = document.getElementById("homePlayer").value;
+    const away = document.getElementById("awayPlayer").value;
+    const homeScore = parseInt(document.getElementById("homeScore").value);
+    const awayScore = parseInt(document.getElementById("awayScore").value);
+
+    if(home===away) return alert("Aynı oyuncu seçilemez.");
+
+    const id = crypto.randomUUID();
+
+    matches.push({ id, round, home, away, homeScore, awayScore });
+
+    matches.sort((a,b)=>{
+        if(a.round!==b.round) return a.round - b.round;
+        return a.home.localeCompare(b.home,'tr');
+    });
+
+    totalRounds = Math.max(totalRounds, round);
+
+    saveMatchesToDB();
+    renderMatches();
+    renderStandings();
+}
+
+function renderMatches() {
+    const box = document.getElementById("matchList");
+    box.innerHTML = "";
+
+    matches.forEach(m=>{
+        const hrName = players.find(x=>x.id===m.home)?.name || "?";
+        const awName = players.find(x=>x.id===m.away)?.name || "?";
+
+        const row=document.createElement("div");
+        row.textContent = `${m.round}. Tur: ${hrName} ${m.homeScore} - ${m.awayScore} ${awName}`;
+        box.appendChild(row);
+    });
+}
+
+/* --------------------------- STANDINGS --------------------------- */
+
+function calculateStandings() {
+    const table = {};
+
+    players.forEach(p=>{
+        table[p.id] = { name:p.name, pts:0, played:0, diff:0, win:0, draw:0, loss:0 };
+    });
+
+    matches.forEach(m=>{
+        const home = table[m.home];
+        const away = table[m.away];
+
+        home.played++; away.played++;
+
+        home.diff += (m.homeScore - m.awayScore);
+        away.diff += (m.awayScore - m.homeScore);
+
+        if(m.homeScore > m.awayScore){
+            home.pts+=3; home.win++; away.loss++;
+        } else if(m.homeScore < m.awayScore){
+            away.pts+=3; away.win++; home.loss++;
+        } else {
+            home.pts++; away.pts++; home.draw++; away.draw++;
+        }
+    });
+
+    return Object.values(table).sort((a,b)=>{
+        if(b.pts !== a.pts) return b.pts - a.pts;
+        return b.diff - a.diff;
+    });
+}
+
+function renderStandings() {
+    const list = calculateStandings();
+    const box = document.getElementById("standings");
+    box.innerHTML="";
+
+    list.forEach((t,i)=>{
+        const row = document.createElement("div");
+        row.textContent = `${i+1}. ${t.name} - Puan: ${t.pts} | Averaj: ${t.diff}`;
+        box.appendChild(row);
+    });
+}
+
+/* --------------------------- INIT --------------------------- */
+
+window.onload = loadDataFromDB;
+</script>
 </head>
-<body class="min-h-screen p-2 md:p-6" onload="initApp()">
 
-    <!-- Yüklenme Ekranı -->
-    <div id="loading-overlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 transition-opacity">
-        <div class="flex flex-col items-center">
-            <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-700 h-12 w-12 mb-4"></div>
-            <p class="text-white font-semibold">Yükleniyor...</p>
-        </div>
-    </div>
-    
-    <!-- Ayarlar Butonu (Sol Üst) -->
-    <div class="fixed top-4 left-4 z-50">
-        <button onclick="showSettingsModal()" class="w-12 h-12 rounded-full bg-slate-700 text-white shadow-xl hover:bg-blue-600 active:bg-blue-800 transition-colors flex items-center justify-center border border-slate-600">
-            <i class="fas fa-cog text-xl"></i>
-        </button>
-    </div>
-
-    <div class="max-w-4xl mx-auto space-y-6" id="app-container" style="display: none;">
-        <!-- Başlık -->
-        <div class="text-center py-8 relative overflow-hidden rounded-2xl shadow-2xl tt-gradient border border-yellow-700/50">
-            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
-            <div class="relative z-10">
-                <!-- İkon Buradan Güncellenecek -->
-                <i id="app-icon" class="fas fa-table-tennis text-5xl text-gray-800 mb-2 drop-shadow-lg animate-pulse"></i>
-                <h1 id="app-title" class="text-2xl md:text-3xl font-extrabold tracking-wider text-gray-900 drop-shadow-md uppercase">LİG UYGULAMASI</h1>
-                <span id="mode-display" class="text-xs text-gray-700 font-bold mt-1 block">TEKLER LİGİ</span>
-            </div>
-        </div>
-        
-        <!-- Menü -->
-        <div class="flex rounded-lg bg-slate-800 p-1 shadow-lg">
-            <button onclick="showTab('standings')" id="btn-standings" class="flex-1 py-3 rounded-md transition-all font-bold bg-blue-600 text-white shadow-md"><i class="fas fa-list-ol mr-2"></i> Puan Durumu</button>
-            <button onclick="showTab('fixtures')" id="btn-fixtures" class="flex-1 py-3 rounded-md transition-all font-bold text-slate-400 hover:text-white hover:bg-slate-700"><i class="fas fa-calendar-alt mr-2"></i> Maç Fikstürü</button>
-        </div>
-
-        <!-- İçerik -->
-        <div class="glass-panel rounded-xl shadow-2xl overflow-hidden min-h-[500px] p-4 md:p-6">
-            <!-- Puan Durumu -->
-            <div id="tab-standings" class="p-0">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-900/80 text-blue-300 text-xs uppercase tracking-wider border-b border-slate-700">
-                                <th class="p-4 text-center w-12 col-points" id="col-header-rank">#</th>
-                                <th class="p-4 col-entity" id="standings-entity-title">Sıralama</th>
-                                <th class="p-4 text-center col-played" id="col-header-played">O</th>
-                                <th class="p-4 text-center col-wins" id="col-header-wins">G</th>
-                                <th class="p-4 text-center col-draws" id="col-header-draws">B</th>
-                                <th class="p-4 text-center col-losses" id="col-header-losses">M</th>
-                                <th class="p-4 text-center col-goals-for" id="col-header-goals-for">A</th>
-                                <th class="p-4 text-center col-goals-against" id="col-header-goals-against">Y</th> 
-                                <th class="p-4 text-center col-average" id="col-header-average">AV</th>
-                                <th class="p-4 text-center font-bold text-white bg-blue-900/30 text-lg col-points" id="col-header-points">P</th>
-                            </tr>
-                        </thead>
-                        <tbody id="standings-body" class="divide-y divide-slate-700 text-sm md:text-base"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Fikstür -->
-            <div id="tab-fixtures" class="hidden p-0 space-y-6">
-                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900/50 shadow-lg border border-slate-700">
-                    <button id="prev-round-btn" onclick="changeRound(-1)" class="p-2 text-blue-400 hover:text-blue-200 disabled:text-slate-600 disabled:cursor-not-allowed"><i class="fas fa-chevron-left text-xl"></i></button>
-                    <h3 id="round-title" class="text-center text-blue-400 font-bold uppercase tracking-widest text-lg md:text-xl">1. Hafta</h3>
-                    <button id="next-round-btn" onclick="changeRound(1)" class="p-2 text-blue-400 hover:text-blue-200 disabled:text-slate-600 disabled:cursor-not-allowed"><i class="fas fa-chevron-right text-xl"></i></button>
-                </div>
-                <div id="fixtures-container" class="p-2 md:p-4 max-h-[60vh] overflow-y-auto custom-scrollbar"></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- AYARLAR MODALI -->
-    <div id="settings-modal" class="hidden fixed inset-0 z-[55] flex items-center justify-center bg-black/80 backdrop-blur-sm" onclick="closeSettingsModal()">
-        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl max-w-2xl w-full h-[90vh] md:h-auto md:max-h-[90vh] flex flex-col border border-blue-400/30" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700">
-                <h2 class="text-2xl font-bold text-blue-400">Ayarlar</h2>
-                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            
-            <!-- SEKME YAPISI BAŞLANGIÇ -->
-            <div class="flex-grow flex overflow-hidden -mx-4 -mb-4 md:m-0">
-                <!-- Sekme Navigasyonu (Sol) -->
-                <div class="w-1/3 md:w-48 bg-slate-900/50 p-2 flex flex-col space-y-2 custom-scrollbar overflow-y-auto border-r border-slate-700">
-                    <button onclick="showSettingsTab('general')" id="tab-btn-general" class="settings-tab-btn selected"><i class="fas fa-sliders-h mr-2"></i> Genel Ayarlar</button>
-                    <button onclick="showSettingsTab('players')" id="tab-btn-players" class="settings-tab-btn"><i class="fas fa-user-plus mr-2"></i> Oyuncular</button>
-                    <button onclick="showSettingsTab('fixtures')" id="tab-btn-fixtures" class="settings-tab-btn"><i class="fas fa-trophy mr-2"></i> Fikstür & Mod</button>
-                    <button onclick="showSettingsTab('data')" id="tab-btn-data" class="settings-tab-btn text-red-400 hover:bg-red-900/20"><i class="fas fa-trash-alt mr-2"></i> Verileri Sil</button>
-                </div>
-
-                <!-- Sekme İçeriği (Sağ) -->
-                <div id="settings-content" class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-6">
-
-                    <!-- 1. GENEL AYARLAR TABI (PUANLAMA VE GÖRÜNÜM) -->
-                    <div id="settings-tab-general" class="settings-tab-content">
-                        <h3 class="text-xl font-bold text-yellow-400 mb-4">Genel Görüntü & Puanlama Ayarları</h3>
-
-                        <!-- PUANLAMA SİSTEMİ SEÇİCİ -->
-                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 mb-6">
-                            <h3 class="text-lg font-semibold text-white mb-3">Puanlama Sistemi</h3>
-                            <div id="scoring-rule-picker" class="space-y-3 mb-4">
-                                <!-- Puanlama Kuralı radio butonları buraya render edilecek -->
-                            </div>
-                            <!-- YENİ: ÖZEL PUAN GİRİŞİ -->
-                            <div id="custom-points-inputs" class="p-3 rounded-lg bg-slate-700/50 space-y-2 hidden">
-                                <p class="text-sm font-semibold text-blue-300">Galibiyet / Beraberlik / Mağlubiyet Puanları</p>
-                                <div class="flex gap-4">
-                                    <div class="flex flex-col flex-1">
-                                        <label for="p-win" class="text-xs text-green-400">Galibiyet (G)</label>
-                                        <input type="number" id="p-win" min="0" onchange="updateCustomPoints('win', this.value)" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
-                                    </div>
-                                    <div class="flex flex-col flex-1">
-                                        <label for="p-draw" class="text-xs text-blue-400">Beraberlik (B)</label>
-                                        <input type="number" id="p-draw" min="0" onchange="updateCustomPoints('draw', this.value)" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
-                                    </div>
-                                    <div class="flex flex-col flex-1">
-                                        <label for="p-lose" class="text-xs text-red-400">Mağlubiyet (M)</label>
-                                        <input type="number" id="p-lose" min="0" onchange="updateCustomPoints('lose', this.value)" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- YENİ: SÜTUN GÖRÜNÜRLÜĞÜ -->
-                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 mb-6">
-                            <h3 class="text-lg font-semibold text-white mb-3">Puan Durumu Sütun Görünürlüğü</h3>
-                            <div class="grid grid-cols-3 gap-4 text-sm">
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-played" onchange="toggleStandingsColumn('played', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Oynanan Maç (O)
-                                </label>
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-wins" onchange="toggleStandingsColumn('wins', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Galibiyet (G)
-                                </label>
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-draws" onchange="toggleStandingsColumn('draws', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Beraberlik (B)
-                                </label>
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-losses" onchange="toggleStandingsColumn('losses', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Mağlubiyet (M)
-                                </label>
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-goals-for" onchange="toggleStandingsColumn('goalsFor', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Atılan Sayı (A)
-                                </label>
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-goals-against" onchange="toggleStandingsColumn('goalsAgainst', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Yenilen Sayı (Y)
-                                </label>
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-average" onchange="toggleStandingsColumn('average', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Averaj (AV)
-                                </label>
-                                <label class="flex items-center text-slate-300">
-                                    <input type="checkbox" id="vis-points" onchange="toggleStandingsColumn('points', this.checked)" class="mr-2 h-4 w-4 text-blue-600 rounded"> Puan (P)
-                                </label>
-                            </div>
-                            <p class="text-xs text-slate-500 mt-3">Tabloda görmek istemediğiniz istatistikleri gizleyebilirsiniz.</p>
-                        </div>
-
-                        <!-- BAŞLIK DÜZENLE -->
-                        <div class="bg-slate-900/50 p-4 rounded-lg border border-yellow-700/50 mb-6">
-                            <h3 class="text-lg font-semibold text-yellow-400 mb-2">Başlık Düzenle</h3>
-                            <input type="text" id="app-custom-title" class="w-full p-2 rounded bg-slate-700 text-white border border-slate-600" onchange="saveCustomTitle(this.value)">
-                        </div>
-                        
-                        <!-- İKON SEÇİCİ -->
-                        <div class="bg-slate-900/50 p-4 rounded-lg border border-yellow-700/50">
-                            <h3 class="text-lg font-semibold text-yellow-400 mb-2">Başlık İkonu Seçimi</h3>
-                            <div id="icon-picker-container" class="flex flex-wrap gap-2 justify-center">
-                                <!-- İkonlar buraya render edilecek -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 2. OYUNCU YÖNETİMİ TABI (Mevcut) -->
-                    <div id="settings-tab-players" class="settings-tab-content hidden">
-                        <h3 class="text-xl font-bold text-green-400 mb-4">Oyuncu Ekle/Sil</h3>
-
-                        <!-- OYUNCU EKLE -->
-                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700 mb-6">
-                            <h3 class="text-lg font-semibold text-white mb-2">Oyuncu Ekle</h3>
-                            <div class="flex gap-2">
-                                <input type="text" id="new-player-name" placeholder="Adı Giriniz" class="flex-1 p-2 rounded bg-slate-700 text-white border border-slate-600">
-                                <button onclick="handleAddPlayer()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 rounded">Ekle</button>
-                            </div>
-                        </div>
-
-                        <!-- MEVCUT OYUNCULAR LİSTESİ -->
-                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
-                            <h3 class="text-lg font-semibold text-white mb-2" id="player-count-display">Mevcut Canavarlar</h3>
-                            <ul id="player-list-container" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"></ul>
-                        </div>
-                    </div>
-
-                    <!-- 3. FİKSTÜR VE MOD TABI (Mevcut) -->
-                    <div id="settings-tab-fixtures" class="settings-tab-content hidden">
-                        <h3 class="text-xl font-bold text-purple-400 mb-4">Fikstür ve Lig Modu</h3>
-
-                        <!-- MOD DEĞİŞTİRME -->
-                        <div id="mode-switch-section" class="bg-slate-900/50 p-4 rounded-lg border border-purple-700/50 mb-6">
-                            <button id="btn-switch-mode" onclick="toggleTournamentMode()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg mb-2">Çiftli Turnuvaya Dön</button>
-                            <p class="text-xs text-slate-400 text-center" id="mode-desc">Skorlara göre 1. ile sonuncu eşleşir.</p>
-                        </div>
-                        
-                        <!-- FİKSTÜR YENİLE -->
-                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
-                            <button onclick="resetFixturesConfirmation()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg">Yeni Fikstür Çek</button>
-                        </div>
-                    </div>
-
-                    <!-- 4. VERİ YÖNETİMİ TABI (Mevcut) -->
-                    <div id="settings-tab-data" class="settings-tab-content hidden">
-                        <h3 class="text-xl font-bold text-red-400 mb-4">Tüm Verileri Sil (Geri Alınamaz)</h3>
-                        <div class="bg-red-900/20 p-4 rounded-lg border border-red-700">
-                             <p class="text-sm text-red-200 mb-4">Bu işlem tüm oyuncuları, skorları, fikstürü ve ayarları tamamen silecektir. Uygulama fabrika ayarlarına dönecektir.</p>
-                            <button onclick="resetLeagueConfirmation()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg">Tüm Verileri Sıfırla</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- SEKME YAPISI BİTİŞ -->
-            
-        </div>
-    </div>
-
-    <!-- ONAY MODALI (Mevcut) -->
-    <div id="confirmation-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl max-w-sm w-full border border-blue-400/30" onclick="event.stopPropagation()">
-            <h3 id="modal-title" class="text-xl font-bold mb-3 text-blue-400">Onay</h3>
-            <p id="modal-message" class="text-sm text-slate-300 mb-6">Emin misiniz?</p>
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeModal(false)" class="px-4 py-2 bg-slate-600 text-white rounded-lg">İptal</button>
-                <button id="modal-confirm-button" onclick="closeModal(true)" class="px-4 py-2 bg-red-600 text-white font-bold rounded-lg">Onayla</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAÇ DETAY MODALI (Mevcut) -->
-    <div id="match-details-modal" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-black/80 backdrop-blur-sm" style="display: none;" onclick="closeMatchDetailsModal()">
-        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl max-w-lg w-full h-[80vh] flex flex-col border border-yellow-400/50" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700">
-                <h2 id="match-details-title" class="text-xl font-bold text-yellow-400">Detaylar</h2>
-                <button onclick="closeMatchDetailsModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            <div class="flex-grow overflow-y-auto custom-scrollbar pr-2 space-y-6">
-                <div>
-                    <h3 class="text-lg font-semibold text-green-400 mb-2 border-b border-green-700/50">Oynanmış Maçlar (<span id="played-count">0</span>)</h3>
-                    <div id="played-matches-container" class="space-y-2"></div>
-                    <p id="no-played-message" class="text-slate-500 italic text-sm">Maç yok.</p>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold text-blue-400 mb-2 border-b border-blue-700/50">Oynanacak Maçlar (<span id="upcoming-count">0</span>)</h3>
-                    <div id="upcoming-matches-container" class="space-y-2"></div>
-                    <p id="no-upcoming-message" class="text-slate-500 italic text-sm">Maç yok.</p>
-                </div>
-            </div>
-            <div class="mt-4 pt-2 border-t border-slate-700">
-                <button onclick="closeMatchDetailsModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg">Kapat</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let players = [], teams = [], isDoublesMode = false, matches = [];
-        let currentRound = 1, totalRounds = 0, customTitle = "DEPO CANAVARLARI LİGİ", customIcon = "fas fa-table-tennis";
-        let scoringRule = 'direct'; 
-        let currentCallback = null;
-        let currentActiveTab = 'standings';
-        const STORAGE_KEY = 'tableTennisLeagueData_v3';
-        
-        // GÜNCELLENDİ: TÜM SÜTUNLAR İÇİN STATE VE VARSAYILAN AYAR
-        let customPoints = { win: 3, draw: 1, lose: 0 }; 
-        let standingsVisibility = {
-            played: true,
-            wins: true,
-            draws: true,
-            losses: true,
-            goalsFor: true,
-            goalsAgainst: true,
-            average: true,
-            points: true,
-        };
-
-        const initialPlayersList = [
-            "Alper Gündüz", "Ersen Dağdeviren", "Birol Lüy", "Orhan Akmaz", "Hakan Kaya", "Ömer Aksoy", 
-            "Serkan Gözde", "Osman Kaplan", "Ahmet Kunbetli", "Ahmet Çetin", "Yasin Argana", "Sedat Şafak"
-        ];
-
-        const iconList = [
-            "fas fa-table-tennis", "fas fa-trophy", "fas fa-futbol", "fas fa-basketball-ball", 
-            "fas fa-running", "fas fa-medal", "fas fa-dumbbell", "fas fa-gamepad",
-            "fas fa-globe", "fas fa-chess-king"
-        ];
-        
-        const ruleList = [
-            { id: 'direct', label: "1. Maç Fikstürüne kaç yazılırsa puan durumuna o geçsin (Atılan sayı = Puan)" },
-            { id: 'custom_points', label: "2. Galibiyet/Beraberlik/Mağlubiyet puanlarını kendim belirleyeceğim." },
-            { id: 'set_scoring', label: "3. Set Hesaplama (3 Set): Set kazanana 2 puan, GF/GA toplam sayı olur." }
-        ];
-
-        function generateUniqueId() {
-            return Math.random().toString(36).substr(2, 9);
-        }
-
-        /* ----- BAŞLANGIÇ: GÜNCEL VE DAHA GÜVENLİ İNİT FONKSİYONLARI ----- */
-
-        function initApp() {
-            try {
-                loadStateFromLocal();
-                applyStandingsVisibility(); 
-                updateUI();
-                showTab('standings');
-            } catch (e) {
-                console.error("Uygulama başlatılırken kritik hata oluştu:", e);
-                // Hata durumunda bile yükleme ekranını gizle
-            } finally {
-                document.getElementById('loading-overlay').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
-            }
-        }
-
-        function loadStateFromLocal() {
-            try {
-                const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-                if (data) {
-                    players = data.players || [];
-                    teams = data.teams || [];
-                    isDoublesMode = data.isDoublesMode || false;
-                    matches = data.matches || [];
-                    currentRound = data.currentRound || 1;
-                    totalRounds = data.totalRounds || 0;
-                    customTitle = data.customTitle || "DEPO CANAVARLARI LİGİ";
-                    customIcon = data.customIcon || "fas fa-table-tennis";
-                    scoringRule = data.scoringRule || 'direct'; 
-                    
-                    customPoints = data.customPoints || { win: 3, draw: 1, lose: 0 };
-                    
-                    // GÜNCELLENDİ: Yeni sütunları varsayılan veya kaydedilmiş değerlerle yükle
-                    standingsVisibility = {
-                        played: data.standingsVisibility?.played !== undefined ? data.standingsVisibility.played : true,
-                        wins: data.standingsVisibility?.wins !== undefined ? data.standingsVisibility.wins : true,
-                        draws: data.standingsVisibility?.draws !== undefined ? data.standingsVisibility.draws : true,
-                        losses: data.standingsVisibility?.losses !== undefined ? data.standingsVisibility.losses : true,
-                        goalsFor: data.standingsVisibility?.goalsFor !== undefined ? data.standingsVisibility.goalsFor : true,
-                        goalsAgainst: data.standingsVisibility?.goalsAgainst !== undefined ? data.standingsVisibility.goalsAgainst : true,
-                        average: data.standingsVisibility?.average !== undefined ? data.standingsVisibility.average : true,
-                        points: data.standingsVisibility?.points !== undefined ? data.standingsVisibility.points : true,
-                    };
-
-                    matches.forEach(m => {
-                        if (m.setScores === undefined || m.setScores.length !== 3) {
-                            m.setScores = [{home: null, away: null}, {home: null, away: null}, {home: null, away: null}];
-                        }
-                    });
-
-                } else {
-                    initializePlayers(initialPlayersList);
-                }
-            } catch (e) { 
-                console.error("Local Storage yüklenirken hata oluştu veya veri bozuk. Varsayılan başlatılıyor.", e);
-                initializePlayers(initialPlayersList); 
-            }
-        }
-
-        function initializePlayers(names) {
-            if (!Array.isArray(names) || names.length === 0) {
-                 players = [];
-                 matches = [];
-                 totalRounds = 0;
-                 currentRound = 1;
-                 saveStateToLocal();
-                 return;
-            }
-            
-            players = names.map(name => ({ id: generateUniqueId(), name }));
-            try {
-                generateFixtures(false, true);
-            } catch (e) {
-                 console.error("Fikstür oluşturulurken hata oluştu. Lütfen oyuncu sayısını kontrol edin.", e);
-                 matches = [];
-                 totalRounds = 0;
-                 currentRound = 1;
-                 saveStateToLocal();
-            }
-        }
-
-        function saveStateToLocal() {
-            const state = { players, teams, isDoublesMode, matches, currentRound, totalRounds, customTitle, customIcon, scoringRule, customPoints, standingsVisibility };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-            
-            updateUI();
-            applyStandingsVisibility();
-            
-            if (currentActiveTab === 'standings') {
-                renderStandings();
-            } else if (currentActiveTab === 'fixtures') {
-                renderFixtures();
-            }
-        }
-
-        /* YENİ: PUAN DURUMU GÖRÜNÜRLÜĞÜ İŞLEMLERİ */
-        window.toggleStandingsColumn = function(key, isChecked) {
-            standingsVisibility[key] = isChecked;
-            saveStateToLocal();
-        }
-
-        // GÜNCELLENDİ: Tüm sütunları yönetmek için
-        function applyStandingsVisibility() {
-            // Checkbox'ları güncelle
-            const columnMap = {
-                played: 'Oynanan Maç (O)',
-                wins: 'Galibiyet (G)',
-                draws: 'Beraberlik (B)',
-                losses: 'Mağlubiyet (M)',
-                goalsFor: 'Atılan Sayı (A)',
-                goalsAgainst: 'Yenilen Sayı (Y)',
-                average: 'Averaj (AV)',
-                points: 'Puan (P)',
-            };
-            
-            // Sıralama (#) sütunu her zaman puan (points) ile birlikte gizlenir/gösterilir.
-            const rankClass = standingsVisibility.points ? '' : 'col-hide';
-            const rankHeader = document.getElementById('col-header-rank');
-            if (rankHeader) rankHeader.className = `p-4 text-center w-12 ${rankClass}`;
-            
-
-            Object.keys(columnMap).forEach(key => {
-                const elementId = `vis-${key}`;
-                const checkbox = document.getElementById(elementId);
-                if (checkbox) checkbox.checked = standingsVisibility[key];
-
-                // Tablo başlık ve hücrelerini güncelle
-                const header = document.getElementById(`col-header-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`);
-                const cells = document.querySelectorAll(`.col-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`);
-
-                const className = standingsVisibility[key] ? '' : 'col-hide';
-                
-                if (header) {
-                     // Başlıkta sadece ilgili gizleme sınıfını yönet
-                     header.classList.toggle('col-hide', !standingsVisibility[key]);
-                }
-                
-                cells.forEach(cell => {
-                    // Hücrede sadece ilgili gizleme sınıfını yönet
-                    cell.classList.toggle('col-hide', !standingsVisibility[key]);
-                });
-            });
-            
-            // Puan (P) sütunu gösterilmezse, Sıra (#) sütunu da gösterilmez.
-            const rankCells = document.querySelectorAll('.col-rank');
-            if (rankCells) rankCells.forEach(cell => cell.classList.toggle('col-hide', !standingsVisibility.points));
-        }
-
-
-        /* MODAL İŞLEMLERİ (Mevcut) */
-        window.showSettingsModal = function() {
-            renderPlayerSettings();
-            renderIconPicker();
-            renderScoringRulePicker(); 
-            applyStandingsVisibility(); // Checkboxları güncelle
-            const m = document.getElementById('settings-modal');
-            m.classList.remove('hidden');
-            m.style.display = 'flex';
-            showSettingsTab('general');
-        }
-        window.closeSettingsModal = function() {
-            const m = document.getElementById('settings-modal');
-            m.classList.add('hidden');
-            m.style.display = 'none';
-        }
-        
-        window.showSettingsTab = function(tabName) {
-            document.querySelectorAll('.settings-tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.settings-tab-btn').forEach(el => el.classList.remove('selected'));
-
-            const content = document.getElementById(`settings-tab-${tabName}`);
-            if (content) content.classList.remove('hidden');
-
-            const btn = document.getElementById(`tab-btn-${tabName}`);
-            if (btn) btn.classList.add('selected');
-        }
-
-        // Yardımcı Fonksiyon: Maç skorunu günceller
-        window.updateScore = function(matchId, homeOrAway, inputElement) {
-            const score = parseInt(inputElement.value);
-            const match = matches.find(m => m.id === matchId);
-            
-            if (match && !isNaN(score) && score >= 0) {
-                if (homeOrAway === 'home') {
-                    match.homeScore = score;
-                } else {
-                    match.awayScore = score;
-                }
-                saveStateToLocal();
-            } else if (match && inputElement.value === '') {
-                 if (homeOrAway === 'home') {
-                    match.homeScore = null;
-                } else {
-                    match.awayScore = null;
-                }
-                saveStateToLocal();
-            } else if (inputElement.value !== '') {
-                 inputElement.value = homeOrAway === 'home' ? match.homeScore || '' : match.awayScore || '';
-            }
-        }
-        
-        // Yardımcı Fonksiyon: Set skorunu günceller (Set Scoring Kuralı İçin)
-        window.updateSetScore = function(matchId, setIndex, homeOrAway, inputElement) {
-            const score = parseInt(inputElement.value);
-            const match = matches.find(m => m.id === matchId);
-
-            if (match) {
-                if (!match.setScores || match.setScores.length !== 3) {
-                     match.setScores = [{home: null, away: null}, {home: null, away: null}, {home: null, away: null}];
-                }
-                
-                let currentSet = match.setScores[setIndex];
-                if (!currentSet) {
-                    currentSet = {home: null, away: null};
-                    match.setScores[setIndex] = currentSet;
-                }
-
-                if (!isNaN(score) && score >= 0) {
-                    if (homeOrAway === 'home') {
-                        currentSet.home = score;
-                    } else {
-                        currentSet.away = score;
-                    }
-                } else if (inputElement.value === '') {
-                     if (homeOrAway === 'home') {
-                        currentSet.home = null;
-                    } else {
-                        currentSet.away = null;
-                    }
-                } else {
-                     inputElement.value = homeOrAway === 'home' ? currentSet.home || '' : currentSet.away || '';
-                     return;
-                }
-                
-                const h = currentSet.home || 0;
-                const a = currentSet.away || 0;
-
-                const isSetComplete = (h >= 11 && h - a >= 2) || (a >= 11 && a - h >= 2);
-                
-                if (isSetComplete && setIndex < 2) {
-                    setTimeout(() => {
-                         const nextHomeInput = document.getElementById(`set-home-${matchId}-${setIndex + 1}`);
-                         if (nextHomeInput) nextHomeInput.focus();
-                    }, 50);
-                }
-
-                saveStateToLocal();
-            }
-        }
-
-        // Yardımcı Fonksiyon: Onay Modalı
-        window.showConfirmationModal = function(title, message, callback, confirmText = "Onayla") {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            document.getElementById('modal-confirm-button').textContent = confirmText;
-            currentCallback = callback;
-            const m = document.getElementById('confirmation-modal');
-            m.classList.remove('hidden');
-            m.style.display = 'flex';
-        }
-
-        // Yardımcı Fonksiyon: Onay Modalını Kapat
-        window.closeModal = function(result) {
-            document.getElementById('confirmation-modal').classList.add('hidden');
-            document.getElementById('confirmation-modal').style.display = 'none';
-            if (currentCallback) {
-                currentCallback(result);
-            }
-            currentCallback = null;
-        }
-
-        // Yardımcı Fonksiyon: Maç Detay Modalını Göster (Mevcut)
-        window.showMatchDetails = function(entityId) {
-            const list = isDoublesMode ? teams : players;
-            const entity = list.find(e => e.id === entityId);
-            if (!entity) return;
-
-            document.getElementById('match-details-title').textContent = `${entity.name} Maç Geçmişi`;
-
-            const entityMatches = matches.filter(m => m.home === entity.name || m.away === entity.name);
-            const playedContainer = document.getElementById('played-matches-container');
-            const upcomingContainer = document.getElementById('upcoming-matches-container');
-            playedContainer.innerHTML = '';
-            upcomingContainer.innerHTML = '';
-
-            const isPlayed = (m) => m.away !== null && (scoringRule === 'set_scoring' ? m.setScores.some(s => s.home !== null) : (m.homeScore !== null && m.awayScore !== null));
-            
-            const playedMatches = entityMatches.filter(isPlayed);
-            const upcomingMatches = entityMatches.filter(m => !isPlayed(m));
-
-            document.getElementById('played-count').textContent = playedMatches.length;
-            document.getElementById('upcoming-count').textContent = upcomingMatches.length;
-            document.getElementById('no-played-message').style.display = playedMatches.length === 0 ? 'block' : 'none';
-            document.getElementById('no-upcoming-message').style.display = upcomingMatches.length === 0 ? 'block' : 'none';
-
-            // Oynanmış maçları render et
-            playedMatches.forEach(m => {
-                const isHome = m.home === entity.name;
-                const opponentName = isHome ? m.away : m.home;
-                
-                let scoreDisplay = '';
-                let resultClass = 'text-gray-400';
-
-                if (scoringRule === 'set_scoring') {
-                    let homeSets = 0;
-                    let awaySets = 0;
-                    m.setScores.forEach(set => {
-                        if (set.home > set.away) homeSets++;
-                        else if (set.home < set.away) awaySets++;
-                    });
-                    
-                    scoreDisplay = `${isHome ? homeSets : awaySets} - ${isHome ? awaySets : homeSets} (Setler)`;
-                    if (homeSets > awaySets && isHome || awaySets > homeSets && !isHome) { resultClass = 'text-green-400'; }
-                    else if (homeSets < awaySets && isHome || awaySets < homeSets && !isHome) { resultClass = 'text-red-400'; }
-                    else { resultClass = 'text-blue-400'; }
-
-                } else {
-                    const homeS = m.homeScore;
-                    const awayS = m.awayScore;
-                    scoreDisplay = `${isHome ? homeS : awayS} - ${isHome ? awayS : homeS}`;
-                    if (homeS > awayS && isHome || homeS < awayS && !isHome) { resultClass = 'text-green-400'; }
-                    else if (homeS < awayS && isHome || homeS > awayS && !isHome) { resultClass = 'text-red-400'; }
-                    else { resultClass = 'text-blue-400'; }
-                }
-
-                playedContainer.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-                        <span class="text-sm text-slate-300">vs ${opponentName}</span>
-                        <span class="font-bold ${resultClass}">${scoreDisplay}</span>
-                    </div>
-                `;
-            });
-            
-            // Oynanacak maçları render et
-            upcomingMatches.forEach(m => {
-                const opponentName = m.home === entity.name ? m.away : m.home;
-                 upcomingContainer.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-slate-700/50 rounded-lg border border-slate-600">
-                        <span class="text-sm text-slate-300">vs ${opponentName}</span>
-                        <span class="text-xs text-blue-300">Oynanmadı</span>
-                    </div>
-                `;
-            });
-
-
-            document.getElementById('match-details-modal').classList.remove('hidden');
-            document.getElementById('match-details-modal').style.display = 'flex';
-        }
-
-        // Yardımcı Fonksiyon: Maç Detay Modalını Kapat
-        window.closeMatchDetailsModal = function() {
-            document.getElementById('match-details-modal').classList.add('hidden');
-            document.getElementById('match-details-modal').style.display = 'none';
-        }
-        
-        // Yardımcı Fonksiyon: Genel Tab Seçici
-        window.showTab = function(tabName) {
-            document.getElementById('tab-standings').classList.add('hidden');
-            document.getElementById('tab-fixtures').classList.add('hidden');
-            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-            
-            document.getElementById('btn-standings').classList.remove('bg-blue-600', 'text-white', 'hover:bg-slate-700', 'hover:text-white');
-            document.getElementById('btn-fixtures').classList.remove('bg-blue-600', 'text-white', 'hover:bg-slate-700', 'hover:text-white');
-            document.getElementById('btn-standings').classList.add('text-slate-400', 'hover:bg-slate-700');
-            document.getElementById('btn-fixtures').classList.add('text-slate-400', 'hover:bg-slate-700');
-
-            document.getElementById(`btn-${tabName}`).classList.add('bg-blue-600', 'text-white');
-            document.getElementById(`btn-${tabName}`).classList.remove('text-slate-400', 'hover:bg-slate-700');
-
-            currentActiveTab = tabName;
-            
-            if (tabName === 'standings') renderStandings();
-            if (tabName === 'fixtures') renderFixtures();
-        }
-
-        // Yardımcı Fonksiyon: Başlık kaydet
-        window.saveCustomTitle = function(title) {
-            customTitle = title || "LİG UYGULAMASI";
-            saveStateToLocal();
-        }
-
-        // Yardımcı Fonksiyon: İkonu kaydet
-        window.selectIcon = function(iconClass) {
-            customIcon = iconClass;
-            saveStateToLocal();
-            renderIconPicker();
-        }
-
-        // Yardımcı Fonksiyon: İkon Seçici Render Et
-        window.renderIconPicker = function() {
-            const container = document.getElementById('icon-picker-container');
-            container.innerHTML = iconList.map(icon => `
-                <div onclick="selectIcon('${icon}')" 
-                     class="icon-picker-item ${customIcon === icon ? 'selected' : ''}">
-                    <i class="${icon}"></i>
-                </div>
-            `).join('');
-        }
-        
-        // YENİ: PUANLAMA KURALI SEÇİMİ VE ÖZEL PUAN GİRİŞİ
-        window.renderScoringRulePicker = function() {
-            const container = document.getElementById('scoring-rule-picker');
-            const customPointsDiv = document.getElementById('custom-points-inputs');
-
-            container.innerHTML = ruleList.map(rule => `
-                <div class="flex items-start">
-                    <input type="radio" id="rule-${rule.id}" name="scoringRule" value="${rule.id}" 
-                        onchange="saveScoringRule('${rule.id}')" 
-                        ${scoringRule === rule.id ? 'checked' : ''}
-                        class="mt-1 mr-2 text-blue-600 focus:ring-blue-500 h-4 w-4 border-gray-300 bg-slate-700">
-                    <label for="rule-${rule.id}" class="flex-1 text-sm text-slate-300 hover:text-white cursor-pointer">${rule.label}</label>
-                </div>
-            `).join('');
-            
-            if (customPointsDiv) {
-                customPointsDiv.classList.toggle('hidden', scoringRule !== 'custom_points');
-                if (scoringRule === 'custom_points') {
-                    document.getElementById('p-win').value = customPoints.win;
-                    document.getElementById('p-draw').value = customPoints.draw;
-                    document.getElementById('p-lose').value = customPoints.lose;
-                }
-            }
-        }
-        
-        window.saveScoringRule = function(rule) {
-            if (scoringRule !== rule) {
-                const message = "Puanlama kuralını değiştirmek mevcut tüm maç skorlarını sıfırlayacaktır. Devam etmek istiyor musunuz?";
-
-                showConfirmationModal("Kural Değişikliği", message, (res) => {
-                    if (res) {
-                        scoringRule = rule;
-                        generateFixtures(isDoublesMode, true); 
-                        renderScoringRulePicker(); 
-                    } else {
-                        renderScoringRulePicker(); 
-                    }
-                }, "Evet, Değiştir");
-            } else {
-                 renderScoringRulePicker(); 
-            }
-        }
-
-        /* YENİ: ÖZEL PUAN GÜNCELLEME */
-        window.updateCustomPoints = function(key, val) {
-            const value = Math.max(0, parseInt(val) || 0);
-            customPoints[key] = value;
-            saveStateToLocal();
-        }
-
-        // Yardımcı Fonksiyon: Oyuncu Yönetimi Render Et
-        window.renderPlayerSettings = function() {
-            const container = document.getElementById('player-list-container');
-            container.innerHTML = players.map(p => `
-                <li class="flex justify-between items-center p-2 bg-slate-700/50 rounded-lg">
-                    <span class="text-white">${p.name}</span>
-                    <button onclick="removePlayer('${p.id}')" class="text-red-400 hover:text-red-300 ml-4">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
-                </li>
-            `).join('');
-            
-            document.getElementById('player-count-display').textContent = `Mevcut Canavarlar (${players.length})`;
-        }
-
-        // Yardımcı Fonksiyon: Oyuncu Ekle
-        window.handleAddPlayer = function() {
-            const input = document.getElementById('new-player-name');
-            const name = input.value.trim();
-            if (name && !players.some(p => p.name === name)) {
-                players.push({ id: generateUniqueId(), name });
-                input.value = '';
-                generateFixtures(false, true); 
-            }
-        }
-
-        // Yardımcı Fonksiyon: Oyuncu Sil
-        window.removePlayer = function(id) {
-            showConfirmationModal("Oyuncu Silme", "Bu oyuncuyu silmek tüm skorları sıfırlayacaktır. Emin misiniz?", (res) => {
-                if (res) {
-                    players = players.filter(p => p.id !== id);
-                    generateFixtures(false, true); 
-                    renderPlayerSettings();
-                }
-            }, "Evet, Sil");
-        }
-
-        // Yardımcı Fonksiyon: Lig Modu Değiştirme
-        window.toggleTournamentMode = function() {
-            const newMode = !isDoublesMode;
-             showConfirmationModal(
-                "Mod Değiştirme", 
-                `Ligi ${newMode ? 'Çiftler Ligi' : 'Tekler Ligi'} moduna geçirmek tüm skorları sıfırlayacaktır. Devam etmek istiyor musunuz?`, 
-                (res) => {
-                    if (res) {
-                        isDoublesMode = newMode;
-                        if (isDoublesMode) {
-                            if (players.length % 2 !== 0) {
-                                alert("Çiftler Ligi için oyuncu sayısının çift olması gerekmektedir.");
-                                isDoublesMode = false; 
-                                updateUI();
-                                return;
-                            }
-                            teams = [];
-                            for(let i=0; i < players.length; i+=2) {
-                                if (players[i+1]) {
-                                    teams.push({
-                                        id: generateUniqueId(),
-                                        name: `${players[i].name} & ${players[i+1].name}`
-                                    });
-                                }
-                            }
-                        } else {
-                            teams = [];
-                        }
-                        generateFixtures(isDoublesMode, true);
-                        closeSettingsModal();
-                    }
-                }, 
-                "Evet, Modu Değiştir"
-            );
-        }
-
-        // Yardımcı Fonksiyon: Fikstür Sıfırlama Onayı
-        window.resetFixturesConfirmation = function() {
-            showConfirmationModal(
-                "Fikstürü Sıfırla", 
-                "Yeni bir fikstür çekmek mevcut tüm maç skorlarını SIFIRLAYACAKTIR. Devam etmek istiyor musunuz?", 
-                (res) => {
-                    if (res) {
-                        generateFixtures(isDoublesMode, true);
-                        closeSettingsModal();
-                    }
-                }, 
-                "Evet, Yeni Fikstür Çek"
-            );
-        }
-        
-        // Yardımcı Fonksiyon: Tüm Verileri Sıfırlama Onayı
-        window.resetLeagueConfirmation = function() {
-            showConfirmationModal(
-                "Tüm Verileri Sıfırla", 
-                "Bu işlem tüm oyuncuları, skorları ve ayarları SİLECEKTİR. Geri alınamaz. Emin misiniz?", 
-                (res) => {
-                    if (res) {
-                        localStorage.removeItem(STORAGE_KEY);
-                        players = [];
-                        teams = [];
-                        isDoublesMode = false;
-                        matches = [];
-                        currentRound = 1;
-                        totalRounds = 0;
-                        customTitle = "DEPO CANAVARLARI LİGİ";
-                        customIcon = "fas fa-table-tennis";
-                        scoringRule = 'direct';
-                        customPoints = { win: 3, draw: 1, lose: 0 };
-                        // Varsayılan görünürlük ayarlarını sıfırla
-                        standingsVisibility = {
-                            played: true, wins: true, draws: true, losses: true, 
-                            goalsFor: true, goalsAgainst: true, average: true, points: true
-                        };
-                        
-                        initializePlayers(initialPlayersList); 
-                        closeSettingsModal();
-                    }
-                }, 
-                "Evet, Hepsini Sil"
-            );
-        }
-
-        // Yardımcı Fonksiyon: Fikstür Haftası Değiştirme
-        window.changeRound = function(delta) {
-            const newRound = currentRound + delta;
-            if (newRound >= 1 && newRound <= totalRounds) {
-                currentRound = newRound;
-                saveStateToLocal();
-            }
-        }
-
-        // Yardımcı Fonksiyon: Fikstür Oluşturma (Round Robin - Circle Method)
-        function generateFixtures(doubles, resetScores = false) {
-            const entityList = doubles ? teams : players;
-            const N = entityList.length;
-
-            if (N < 2) {
-                matches = [];
-                totalRounds = 0;
-                currentRound = 1;
-                saveStateToLocal();
-                return;
-            }
-
-            const entities = entityList.map(e => e.name);
-            let tempEntities = [...entities];
-            
-            const isOdd = N % 2 !== 0;
-            if (isOdd) {
-                tempEntities.push(null);
-            }
-
-            const M = tempEntities.length; 
-            const totalRoundsCount = N + (isOdd ? 0 : -1);
-            let newMatches = [];
-
-            for (let round = 1; round <= totalRoundsCount; round++) {
-                const roundMatches = [];
-                for (let i = 0; i < M / 2; i++) {
-                    const home = tempEntities[i];
-                    const away = tempEntities[M - 1 - i];
-
-                    if (home !== null && away !== null) {
-                        const existingMatch = matches.find(m => 
-                            m.home === home && m.away === away || m.home === away && m.away === home
-                        );
-                        
-                        if (!resetScores && existingMatch) {
-                            roundMatches.push({ ...existingMatch, round });
-                        } else {
-                            const matchId = generateUniqueId();
-                            roundMatches.push({
-                                id: matchId,
-                                round,
-                                home,
-                                away,
-                                homeScore: null,
-                                awayScore: null,
-                                setScores: [{home: null, away: null}, {home: null, away: null}, {home: null, away: null}] 
-                            });
-                        }
-                    }
-                }
-                newMatches.push(...roundMatches);
-
-                if (M > 2) {
-                    const last = tempEntities.pop();
-                    const second = tempEntities.splice(1, 0, last);
-                }
-            }
-            
-            matches = newMatches;
-            totalRounds = totalRoundsCount;
-            currentRound = 1;
-
-            saveStateToLocal();
-        }
-
-        // Yardımcı Fonksiyon: Fikstür Render Et
-        function renderFixtures() {
-            const container = document.getElementById('fixtures-container');
-            const roundTitle = document.getElementById('round-title');
-            
-            if (matches.length === 0) {
-                 container.innerHTML = `<p class="text-center text-slate-500 py-10">Fikstür oluşturulamadı. Lütfen en az 2 oyuncu/takım ekleyin.</p>`;
-                 roundTitle.textContent = "Fikstür Yok";
-                 document.getElementById('prev-round-btn').disabled = true;
-                 document.getElementById('next-round-btn').disabled = true;
-                 return;
-            }
-            
-            roundTitle.textContent = `${currentRound}. Hafta / ${totalRounds}`;
-            document.getElementById('prev-round-btn').disabled = currentRound === 1;
-            document.getElementById('next-round-btn').disabled = currentRound === totalRounds;
-
-            const roundMatches = matches.filter(m => m.round === currentRound);
-            container.innerHTML = roundMatches.map(m => {
-                const isPlayed = m.homeScore !== null && m.awayScore !== null;
-                const matchClass = isPlayed ? 'bg-slate-700/50 border-green-600/50' : 'bg-slate-900/50 border-blue-600/50';
-
-                let scoreInputs = '';
-
-                if (scoringRule === 'set_scoring') {
-                     // SET SCORING INPUTS
-                    scoreInputs = `
-                        <div class="flex flex-col space-y-1 mt-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700">
-                             <span class="text-xs text-blue-400 font-semibold mb-1">Set Skorları (Ev Sahibi - Deplasman)</span>
-                             <div class="flex justify-between gap-1 text-sm">
-                                ${m.setScores.map((set, index) => `
-                                     <div class="flex flex-col flex-1 items-center bg-slate-700/50 p-1 rounded">
-                                        <span class="text-xs text-slate-400">Set ${index + 1}</span>
-                                        <div class="flex gap-0.5 w-full">
-                                            <input type="number" value="${set.home !== null ? set.home : ''}" min="0" 
-                                                id="set-home-${m.id}-${index}"
-                                                onchange="updateSetScore('${m.id}', ${index}, 'home', this)" 
-                                                class="w-1/2 p-1 text-center bg-slate-900 text-white rounded set-input-box" placeholder="H">
-                                            <input type="number" value="${set.away !== null ? set.away : ''}" min="0" 
-                                                onchange="updateSetScore('${m.id}', ${index}, 'away', this)" 
-                                                class="w-1/2 p-1 text-center bg-slate-900 text-white rounded set-input-box" placeholder="A">
-                                        </div>
-                                     </div>
-                                `).join('')}
-                             </div>
-                        </div>
-                    `;
-                    
-                    let homeSets = 0;
-                    let awaySets = 0;
-                    m.setScores.forEach(set => {
-                        if (set.home !== null && set.away !== null) {
-                            if (set.home > set.away) homeSets++;
-                            else if (set.home < set.away) awaySets++;
-                        }
-                    });
-                    
-                    if (homeSets > 0 || awaySets > 0) {
-                         scoreInputs += `<div class="mt-2 text-center text-lg font-bold text-yellow-400">${homeSets} - ${awaySets} (SETLER)</div>`;
-                    }
-
-                } else {
-                    // DIRECT/CUSTOM POINTS INPUTS
-                    scoreInputs = `
-                        <div class="flex justify-around items-center space-x-4 mt-3">
-                            <input type="number" value="${m.homeScore !== null ? m.homeScore : ''}" min="0" 
-                                onchange="updateScore('${m.id}', 'home', this)" 
-                                class="w-1/3 p-3 text-center text-2xl font-bold bg-slate-700 rounded-lg text-white border-2 border-slate-600 focus:border-blue-500 transition-colors" placeholder="0">
-                            <span class="text-2xl font-bold text-slate-400">-</span>
-                            <input type="number" value="${m.awayScore !== null ? m.awayScore : ''}" min="0" 
-                                onchange="updateScore('${m.id}', 'away', this)" 
-                                class="w-1/3 p-3 text-center text-2xl font-bold bg-slate-700 rounded-lg text-white border-2 border-slate-600 focus:border-blue-500 transition-colors" placeholder="0">
-                        </div>
-                    `;
-                }
-
-
-                return `
-                    <div class="p-4 rounded-xl shadow-lg border ${matchClass} mb-4">
-                        <div class="flex justify-between items-center text-lg font-semibold mb-3">
-                            <span class="text-white">${m.home}</span>
-                            <span class="text-slate-400">vs</span>
-                            <span class="text-white">${m.away}</span>
-                        </div>
-                        ${scoreInputs}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        /* GÜNCELLENDİ: PUAN HESAPLAMA (getStats) */
-        function getStats(entityList) {
-            const stats = {};
-            entityList.forEach(e => stats[e.name] = { id: e.id, name: e.name, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, p: 0 });
-
-            matches.forEach(m => {
-                const isMatchPlayed = m.away !== null && (scoringRule === 'set_scoring' ? (m.setScores.some(s => s.home !== null)) : (m.homeScore !== null && m.awayScore !== null));
-
-                if (isMatchPlayed) {
-                    let homeP=0, awayP=0, homeW=0, homeL=0, homeD=0, awayW=0, awayL=0, awayD=0, homeGF=0, homeGA=0;
-
-                    if (scoringRule === 'set_scoring') {
-                        // SET SCORING LOGIC
-                        let homeSets = 0;
-                        let awaySets = 0;
-                        
-                         m.setScores.forEach(set => {
-                            if (set.home !== null && set.away !== null) {
-                                homeGF += set.home;
-                                homeGA += set.away;
-
-                                if (set.home > set.away) homeSets++;
-                                else if (set.home < set.away) awaySets++;
-                            }
-                        });
-
-                        const isHomeWinner = homeSets > awaySets;
-                        const isAwayWinner = awaySets > homeSets;
-                        
-                        if (isHomeWinner) { homeP = 2; awayP = 1; homeW=1; awayL=1; }
-                        else if (isAwayWinner) { homeP = 1; awayP = 2; homeL=1; awayW=1; }
-                        else if (homeSets + awaySets > 0) { homeP = 1; awayP = 1; homeD=1; awayD=1; } 
-
-                    } else {
-                        // NORMAL SCORING LOGIC (Direct, custom_points)
-                        const homeS = m.homeScore;
-                        const awayS = m.awayScore;
-                        homeGF = homeS;
-                        homeGA = awayS;
-
-                        if (homeS > awayS) { homeW=1; homeL=0; homeD=0; awayW=0; awayL=1; awayD=0; }
-                        else if (homeS < awayS) { homeW=0; homeL=1; homeD=0; awayW=1; awayL=0; awayD=0; }
-                        else { homeW=0; homeL=0; homeD=1; awayW=0; awayL=0; awayD=1; }
-
-                        if (scoringRule === 'direct') {
-                            homeP = homeS; awayP = awayS; 
-                        } else if (scoringRule === 'custom_points') {
-                            if (homeW) { homeP = customPoints.win; awayP = customPoints.lose; }
-                            else if (awayW) { homeP = customPoints.lose; awayP = customPoints.win; }
-                            else { homeP = customPoints.draw; awayP = customPoints.draw; } 
-                        }
-                    }
-
-                    // İstatistikleri güncelle 
-                    [m.home, m.away].forEach((entityName, index) => {
-                        const isHome = index === 0;
-                        const currentStats = stats[entityName];
-                        if (currentStats) {
-                            currentStats.played++;
-                            currentStats.gf += isHome ? homeGF : homeGA; 
-                            currentStats.ga += isHome ? homeGA : homeGF; 
-                            currentStats.p += isHome ? homeP : awayP;
-                            currentStats.w += isHome ? homeW : awayW;
-                            currentStats.l += isHome ? homeL : awayL;
-                            currentStats.d += isHome ? homeD : awayD;
-                        }
-                    });
-                }
-            });
-
-            return stats;
-        }
-
-        /* GÜNCELLENDİ: PUAN DURUMU RENDER */
-        function renderStandings() {
-            const list = isDoublesMode ? teams : players;
-            const stats = getStats(list);
-            const sorted = Object.values(stats).sort((a, b) => b.p - a.p || (b.gf - b.ga) - (a.gf - a.ga));
-            const tbody = document.getElementById('standings-body');
-            tbody.innerHTML = '';
-            
-            // applyStandingsVisibility'yi çağırarak başlık ve hücre sınıflarının güncel olmasını sağla
-            applyStandingsVisibility();
-
-            sorted.forEach((s, i) => {
-                let cl = "text-slate-500";
-                if(i===0) cl="text-yellow-400 font-bold";
-                else if(i===1) cl="text-gray-300 font-bold";
-                else if(i===2) cl="text-amber-700 font-bold";
-
-
-                const row = `
-                    <tr class="hover:bg-slate-800/50 transition-colors">
-                        <td class="p-4 text-center font-mono ${cl} col-points ${standingsVisibility.points ? '' : 'col-hide'}">${i+1}</td>
-                        <td class="p-4 col-entity">
-                            <button onclick="showMatchDetails('${s.id}')" class="w-full text-left font-medium text-white hover:text-yellow-300 active:text-yellow-500 transition-colors py-2 flex items-center">
-                                <div class="w-1 h-6 rounded-r bg-blue-600 mr-2"></div>${s.name}
-                            </button>
-                        </td>
-                        <td class="p-4 text-center text-slate-300 col-played ${standingsVisibility.played ? '' : 'col-hide'}">${s.played}</td>
-                        <td class="p-4 text-center text-green-400 col-wins ${standingsVisibility.wins ? '' : 'col-hide'}">${s.w}</td>
-                        <td class="p-4 text-center text-slate-400 col-draws ${standingsVisibility.draws ? '' : 'col-hide'}">${s.d}</td>
-                        <td class="p-4 text-center text-red-400 col-losses ${standingsVisibility.losses ? '' : 'col-hide'}">${s.l}</td>
-                        <td class="p-4 text-center text-white col-goals-for ${standingsVisibility.goalsFor ? '' : 'col-hide'}">${s.gf}</td>
-                        <td class="p-4 text-center text-slate-400 col-goals-against ${standingsVisibility.goalsAgainst ? '' : 'col-hide'}">${s.ga}</td> 
-                        <td class="p-4 text-center font-bold text-slate-200 col-average ${standingsVisibility.average ? '' : 'col-hide'}">${s.gf-s.ga}</td>
-                        <td class="p-4 text-center font-bold text-xl text-white bg-blue-600/20 col-points ${standingsVisibility.points ? '' : 'col-hide'}">${s.p}</td>
-                    </tr>`;
-                tbody.innerHTML += row;
-            });
-        }
-        
-        function updateUI() {
-            document.getElementById('app-title').textContent = customTitle.toUpperCase();
-            document.getElementById('mode-display').textContent = isDoublesMode ? "ÇİFTLER LİGİ" : "TEKLER LİGİ";
-            document.getElementById('standings-entity-title').textContent = isDoublesMode ? "Takım" : "Sıralama";
-            
-            const appCustomTitleInput = document.getElementById('app-custom-title');
-            if (appCustomTitleInput) {
-                 appCustomTitleInput.value = customTitle;
-            }
-
-            const appIconElement = document.getElementById('app-icon');
-            if (appIconElement) {
-                appIconElement.className = `${customIcon} text-5xl text-gray-800 mb-2 drop-shadow-lg animate-pulse`;
-            }
-
-            const switchBtn = document.getElementById('btn-switch-mode');
-            const modeDesc = document.getElementById('mode-desc');
-            if (switchBtn && modeDesc) {
-                if (isDoublesMode) {
-                    switchBtn.textContent = "Tekler Ligi'ne Dön";
-                    switchBtn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg mb-2";
-                    modeDesc.textContent = "Takımları bozup bireysel lige döner.";
-                } else {
-                    switchBtn.textContent = "Çiftli Turnuvaya Dön";
-                    switchBtn.className = "w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg mb-2";
-                    modeDesc.textContent = "Skorlara göre 1. ile sonuncu eşleşir.";
-                }
-            }
-        }
-
-    </script>
+<body>
+<div class="container">
+
+<div class="player-box">
+<h3>Oyuncu Ekle</h3>
+<input id="playerName" placeholder="Oyuncu adı">
+<button onclick="addPlayer()">Ekle</button>
+<div id="playerList"></div>
+</div>
+
+<div class="match-box">
+<h3>Maç Ekle</h3>
+Tur: <input id="round" type="number" min="1" value="1">
+<br>
+Ev sahibi: <select id="homePlayer"></select>
+<br>
+Deplasman: <select id="awayPlayer"></select>
+<br>
+Ev Skor: <input id="homeScore" type="number" value="0">
+Deplasman Skor: <input id="awayScore" type="number" value="0">
+<br>
+<button onclick="addMatch()">Maç Kaydet</button>
+<div id="matchList"></div>
+</div>
+
+<div class="list-box">
+<h3>Puan Durumu</h3>
+<div id="standings"></div>
+</div>
+
+</div>
 </body>
 </html>
-
